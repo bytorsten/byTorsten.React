@@ -1,0 +1,37 @@
+byTorsten:
+  React:
+
+    bundleNotification: 'resource://byTorsten.React/Private/bundleNotification.js'
+
+    script:
+      paths:
+        macos: 'resource://byTorsten.React/Private/Renderer/bin/react-renderer-macos'
+#        macos: 'resource://byTorsten.React/Private/Renderer/build/index.js'
+        linux: 'resource://byTorsten.React/Private/Renderer/bin/react-renderer-linux'
+        win: 'resource://byTorsten.React/Private/Renderer/bin/react-renderer-win.exe'
+      keepAlive: true
+      pipes:
+        stdout: 'renderer_stdout'
+        stderr: 'renderer_stderr'
+      processTimeout: 2.0
+      socketTimeout: 30.0
+
+    autoInclude:
+      'byTorsten.React': TRUE
+
+Neos:
+  Flow:
+    mvc:
+      routes:
+        'byTorsten.React': TRUE
+    log:
+      reactLogger:
+        logger: Neos\Flow\Log\Logger
+        backend: Neos\Flow\Log\Backend\FileBackend
+        backendOptions:
+           logFileURL: '%FLOW_PATH_DATA%Logs/React.log'
+           createParentDirectories: TRUE
+           severityThreshold: '%LOG_INFO%'
+           maximumLogFileSize: 10485760
+           logFilesToKeep: 1
+           logMessageOrigin: FALSE

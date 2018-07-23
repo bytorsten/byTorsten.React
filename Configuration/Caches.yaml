@@ -1,0 +1,12 @@
+byTorsten_React_File:
+  frontend: Neos\Cache\Frontend\VariableFrontend
+  backend: Neos\Cache\Backend\FileBackend
+
+byTorsten_React_File_Monitor:
+  frontend: Neos\Cache\Frontend\StringFrontend
+  backend: Neos\Cache\Backend\FileBackend
+
+byTorsten_React_IPC_PID:
+  persistent: true
+  frontent: Neos\Cache\Frontend\VariableFrontend
+  backend: Neos\Cache\Backend\FileBackend

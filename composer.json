@@ -1,0 +1,20 @@
+{
+    "description": "renders react templates (and much more)",
+    "type": "neos-react",
+    "name": "bytorsten/react",
+    "require": {
+        "neos/flow": "~5.0.0",
+        "react/socket": "^0.8.12",
+        "react/child-process": "^0.5.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "byTorsten\\React\\": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "byTorsten.React"
+        }
+    }
+}

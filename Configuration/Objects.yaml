@@ -1,0 +1,37 @@
+byTorsten\React\Core\Cache\FileManager:
+  properties:
+    cache:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: byTorsten_React_File
+
+byTorsten\React\Core\Cache\FileMonitor:
+  properties:
+    cache:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: byTorsten_React_File_Monitor
+
+byTorsten\React\Core\IPC\ProcessManager:
+  properties:
+    cache:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: byTorsten_React_IPC_PID
+
+byTorsten\React\Log\ReactLoggerInterface:
+  scope: singleton
+  factoryObjectName: Neos\Flow\Log\PsrLoggerFactoryInterface
+  factoryMethodName: get
+  arguments:
+    1:
+      value: reactLogger

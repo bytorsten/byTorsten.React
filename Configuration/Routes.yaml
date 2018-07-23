@@ -1,0 +1,33 @@
+-
+  name: 'Chunk'
+  uriPattern: 'chunk/{identifier}/{chunkname}'
+  defaults:
+    '@action': 'index'
+    '@package': 'byTorsten.React'
+    '@controller': 'Chunk'
+  appendExceedingArguments: true
+  routeParts:
+    chunkname:
+      toLowerCase: false
+
+-
+  name: 'Legacy Chunk'
+  uriPattern: 'chunk/legacy/{identifier}/{chunkname}'
+  defaults:
+    '@action': 'legacy'
+    '@package': 'byTorsten.React'
+    '@controller': 'Chunk'
+  appendExceedingArguments: true
+  routeParts:
+      chunkname:
+        toLowerCase: false
+
+-
+  name: 'RPC'
+  uriPattern: 'rpc'
+  defaults:
+    '@action': 'index'
+    '@package': 'byTorsten.React'
+    '@controller': 'Rpc'
+  httpMethods: ['POST']
+  appendExceedingArguments: true
