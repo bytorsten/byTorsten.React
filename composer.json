@@ -16,5 +16,8 @@
         "neos": {
             "package-key": "byTorsten.React"
         }
+    },
+    "suggest": {
+        "bytorsten/react-kickstarter": "Easy what to kickstart your react package"
     }
 }
