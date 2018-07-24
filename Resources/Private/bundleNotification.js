@@ -4,7 +4,7 @@
     var scriptUrl = '%SCRIPT_URL%';
     var identifier = '%IDENTIFIER%';
 
-    var log = function (message, style, error) {
+    var log = function (message, error) {
         console[error ? 'error' : 'log']('%c' + message, error ? 'background: red; color: white; padding: 2px' : 'background: #00d8ff; color: white; padding: 2px');
     };
 
