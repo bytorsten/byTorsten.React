@@ -18,6 +18,6 @@
         }
     },
     "suggest": {
-        "bytorsten/react-kickstarter": "Easy what to kickstart your react package"
+        "bytorsten/react-kickstarter": "Easy way to kickstart your react package"
     }
 }
