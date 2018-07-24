@@ -5,7 +5,9 @@ use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Utility\Environment;
 use Neos\Utility\Files;
 use React\EventLoop\Factory as EventLoopFactory;
-use byTorsten\React\Core\Service\FilePathResolver;
+use byTorsten\React\Core\IPC\Process\ProcessException;
+use byTorsten\React\Core\IPC\Process\ProxyProcessInterface;
+use byTorsten\React\Core\IPC\Process\ProcessManager;
 
 class Unit
 {
@@ -28,36 +30,13 @@ class Unit
     protected $environment;
 
     /**
-     * @return string
-     * @throws \Exception
-     */
-    protected function getOS(): string
-    {
-        switch (PHP_OS) {
-            case 'Darwin':
-                return 'macos';
-            case 'WIN32':
-            case 'WINNT':
-            case 'Windows':
-                return 'win';
-            case 'Linux':
-                return 'linux';
-            default:
-                throw new \Exception('Unsupported OS "' . PHP_OS . '"');
-        }
-    }
-
-    /**
      * @param \Closure $processor
      * @return mixed
      * @throws \Exception
      */
     public function work(\Closure $processor)
     {
-        $filePathResolver = new FilePathResolver();
-        $scriptPath = $filePathResolver->resolveFilePath($this->scriptConfiguration['paths'][$this->getOS()]);
-
-        $process = $this->processManager->getProcess($scriptPath, [
+        $process = $this->processManager->getProcess([
             'socket' => Files::concatenatePaths([sys_get_temp_dir(), md5(getmypid()) . '.sock']),
             'production' => $this->environment->getContext()->isProduction()
         ]);
@@ -78,7 +57,7 @@ class Unit
         $process->ready()->done(function () use ($process, $loop, $processor, $domainSocketPath, &$result, &$throwable) {
 
             $socket = new Socket($loop, $domainSocketPath);
-            $app = new App($socket, $process instanceof ProxyProcess);
+            $app = new App($socket, $process instanceof ProxyProcessInterface);
 
             $process->on('error', function (ProcessException $error) use ($app, $socket, $loop, &$throwable) {
                 $app->cancelAllPromises($error);

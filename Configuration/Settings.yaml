@@ -1,21 +1,6 @@
 byTorsten:
   React:
-
     bundleNotification: 'resource://byTorsten.React/Private/bundleNotification.js'
-
-    script:
-      paths:
-        macos: 'resource://byTorsten.React/Private/Renderer/bin/react-renderer-macos'
-#        macos: 'resource://byTorsten.React/Private/Renderer/build/index.js'
-        linux: 'resource://byTorsten.React/Private/Renderer/bin/react-renderer-linux'
-        win: 'resource://byTorsten.React/Private/Renderer/bin/react-renderer-win.exe'
-      keepAlive: true
-      pipes:
-        stdout: 'renderer_stdout'
-        stderr: 'renderer_stderr'
-      processTimeout: 2.0
-      socketTimeout: 30.0
-
     autoInclude:
       'byTorsten.React': TRUE
 

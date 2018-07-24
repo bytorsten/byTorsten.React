@@ -1,17 +1,15 @@
 <?php
 namespace byTorsten\React;
 
-use byTorsten\React\Core\IPC\ProcessManager;
-use byTorsten\React\Log\ReactLoggerInterface;
 use Neos\Flow\Cache\CacheManager;
-use Neos\Flow\Core\Booting\Sequence;
-use Neos\Flow\Core\Booting\Step;
 use Neos\Flow\Core\Bootstrap;
 use Neos\Flow\Mvc\Dispatcher;
 use Neos\Flow\ObjectManagement\ObjectManagerInterface;
 use Neos\Flow\Package\Package as BasePackage;
-use byTorsten\React\Core\Cache\FileMonitor;
 use Neos\Flow\Monitor\FileMonitor as FlowFileMonitor;
+use byTorsten\React\Core\IPC\Process\ProcessManager;
+use byTorsten\React\Log\ReactLoggerInterface;
+use byTorsten\React\Core\Cache\FileMonitor;
 
 class Package extends BasePackage
 {

@@ -18,7 +18,7 @@ byTorsten\React\Core\Cache\FileMonitor:
           1:
             value: byTorsten_React_File_Monitor
 
-byTorsten\React\Core\IPC\ProcessManager:
+byTorsten\React\Core\IPC\Process\ProcessManager:
   properties:
     cache:
       object:

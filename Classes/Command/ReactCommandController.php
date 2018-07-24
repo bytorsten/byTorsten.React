@@ -1,7 +1,6 @@
 <?php
 namespace byTorsten\React\Command;
 
-use byTorsten\React\Core\IPC\ProcessManager;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cache\CacheManager;
 use Neos\Flow\Cli\CommandController;
@@ -14,13 +13,12 @@ use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Mvc\Routing\UriBuilder;
 use Neos\Flow\Package\Package;
 use Neos\Flow\Package\PackageManagerInterface;
+use byTorsten\React\Core\IPC\Process\ProcessManager;
 use byTorsten\React\Core\Bundling\Bundler;
 use byTorsten\React\Core\IPC\App;
 use byTorsten\React\Core\IPC\Unit;
 use byTorsten\React\Core\Service\FilePathResolver;
 use byTorsten\React\Core\Transpiling\Transpiler;
-use React\ChildProcess\Process;
-use React\EventLoop\Factory;
 
 /**
  * @Flow\Scope("singleton")

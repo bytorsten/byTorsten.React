@@ -5,7 +5,7 @@
     "require": {
         "neos/flow": "~5.0.0",
         "react/socket": "^0.8.12",
-        "react/child-process": "^0.5.2"
+        "byTorsten/react-rendererimplementation": "*"
     },
     "autoload": {
         "psr-4": {
