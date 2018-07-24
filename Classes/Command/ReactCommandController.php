@@ -123,7 +123,7 @@ class ReactCommandController extends CommandController
      *
      * @param bool $force (if true, use SIG_KILL, otherwise use SIG_TERM)
      */
-    public function restartProcessesCommand(bool $force = false)
+    public function stopProcessesCommand(bool $force = false)
     {
         $count = $this->processManager->killAllProcesses($force);
         $this->outputLine();
