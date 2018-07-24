@@ -9,7 +9,6 @@ export default {
     file: 'build/index.js',
     sourcemap: true,
     banner: '#!/usr/bin/env node --no-warnings --experimental-vm-modules',
-    intro: `process.env.NODE_ENV = ~process.argv.indexOf('--production') ? 'production' : 'development';`,
     format: 'cjs'
   },
 

@@ -119,7 +119,7 @@ export default class Bundler {
         }),
         namedExports(),
         commonjs({
-          sourceMap: !isProduction,
+          sourceMap: !isProduction(),
           extensions: [ '.js', '' ] // allow files without extensions like the one from hypothetical
         }),
         replace({
@@ -127,7 +127,7 @@ export default class Bundler {
           'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
         }),
 
-        isProduction && terser({
+        isProduction() && terser({
           toplevel: true
         })
       ]
@@ -149,7 +149,7 @@ export default class Bundler {
     const format = legacy ? 'system' : 'es';
     const bundle = stripBundle(await result.generate({
       format,
-      sourcemap: !isProduction
+      sourcemap: !isProduction()
     }));
 
     return {

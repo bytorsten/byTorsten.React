@@ -2,6 +2,7 @@
 namespace byTorsten\React\Core\IPC;
 
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Utility\Environment;
 use Neos\Utility\Files;
 use React\EventLoop\Factory as EventLoopFactory;
 use byTorsten\React\Core\Service\FilePathResolver;
@@ -19,6 +20,12 @@ class Unit
      * @var ProcessManager
      */
     protected $processManager;
+
+    /**
+     * @Flow\Inject
+     * @var Environment
+     */
+    protected $environment;
 
     /**
      * @return string
@@ -51,7 +58,8 @@ class Unit
         $scriptPath = $filePathResolver->resolveFilePath($this->scriptConfiguration['paths'][$this->getOS()]);
 
         $process = $this->processManager->getProcess($scriptPath, [
-            'socket' => Files::concatenatePaths([sys_get_temp_dir(), md5(getmypid()) . '.sock'])
+            'socket' => Files::concatenatePaths([sys_get_temp_dir(), md5(getmypid()) . '.sock']),
+            'production' => $this->environment->getContext()->isProduction()
         ]);
         ['socket' => $domainSocketPath] = $this->processManager->getLastParameters();
 

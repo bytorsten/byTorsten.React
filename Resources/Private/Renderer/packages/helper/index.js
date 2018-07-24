@@ -6,8 +6,7 @@ export const rootPath = path.resolve(__dirname, '..');
 export const staticPath = path.join(rootPath, 'static');
 export const nodeModulesPath = path.join(rootPath, 'node_modules');
 
-export const isProduction = process.env.NODE_ENV === 'production';
-
+export const isProduction = () => process.env.NODE_ENV === 'production';
 export const stripBundle = bundle => Object.keys(bundle.output).reduce((strippedBundle, filename) => {
   const { code, map } = bundle.output[filename];
 

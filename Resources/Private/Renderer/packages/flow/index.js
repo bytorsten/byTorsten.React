@@ -12,11 +12,17 @@ export default class Flow {
   constructor(socketPath) {
     this.stop = this.stop.bind(this);
 
+    this.readyPromise = new Promise(resolve => {
+      this.resolveReadyPromise = resolve;
+    });
+
     this.server = new Server(socketPath);
 
     this.server.on('ready', () => {
       process.stdout.write(READY_FLAG);
+      this.resolveReadyPromise();
     });
+
     this.server.on('error', Flow.terminate);
     this.server.on('command', async ({ command, data }, { reply, send }) => {
       if (!this[command]) {
@@ -49,6 +55,7 @@ export default class Flow {
   start() {
     this.server.listen();
     process.on('SIGTERM', this.stop);
+    return this.readyPromise;
   }
 
   async stop() {

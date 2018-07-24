@@ -23,6 +23,8 @@ if (!options.socket) {
   Flow.terminate('Please specify a socket path with the --socket option');
 }
 
+process.env.NODE_ENV = options.production ? 'production' : 'development';
+
 class App extends Flow {
 
   constructor(socket) {
@@ -86,7 +88,7 @@ class App extends Flow {
     });
     console.timeEnd('bundle');
 
-    if (!isProduction) {
+    if (!isProduction()) {
       this.cacheBundles[identifier] = cache;
     }
 
@@ -95,4 +97,6 @@ class App extends Flow {
 }
 
 const renderer = new App(options.socket);
-renderer.start();
+renderer.start().then(() => {
+  console.log(`Rendering engine online in ${isProduction() ? 'production' : 'development'}`);
+});

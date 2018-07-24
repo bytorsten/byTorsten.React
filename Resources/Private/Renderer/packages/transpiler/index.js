@@ -73,14 +73,14 @@ export default class Transpiler {
             BabelSyntaxImportMeta,
             BabelObjectRestSpread,
             BabelClassProperties,
-            isProduction && BabelReactInlineElement,
-            isProduction && BabelReactContantElements
+            isProduction() && BabelReactInlineElement,
+            isProduction() && BabelReactContantElements
           ].filter(Boolean)
         })
       ]
     });
 
-    const bundle = stripBundle(await this.result.generate({ format: 'es', sourcemap: !isProduction }));
+    const bundle = stripBundle(await this.result.generate({ format: 'es', sourcemap: !isProduction() }));
 
     return {
       bundle,
