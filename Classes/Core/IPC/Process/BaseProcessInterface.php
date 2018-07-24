@@ -31,4 +31,9 @@ interface BaseProcessInterface extends EventEmitterInterface
      * @return ExtendedPromiseInterface
      */
     public function ready(): ExtendedPromiseInterface;
+
+    /**
+     * @return bool
+     */
+    public function keepAlive(): bool;
 }

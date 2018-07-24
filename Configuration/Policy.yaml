@@ -1,0 +1,11 @@
+privilegeTargets:
+  'Neos\Flow\Security\Authorization\Privilege\Method\MethodPrivilege':
+    'byTorsten.React:Chunks':
+      matcher: 'method(byTorsten\React\Controller\ChunkController->.*Action())'
+
+roles:
+  'Neos.Flow:Everybody':
+    privileges:
+      -
+        privilegeTarget: 'byTorsten.React:Chunks'
+        permission: GRANT

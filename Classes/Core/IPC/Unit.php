@@ -11,11 +11,6 @@ use byTorsten\React\Core\IPC\Process\ProcessManager;
 
 class Unit
 {
-    /**
-     * @Flow\InjectConfiguration("script")
-     * @var array
-     */
-    protected $scriptConfiguration;
 
     /**
      * @Flow\Inject
@@ -71,7 +66,7 @@ class Unit
                     return;
                 }
 
-                if ($this->scriptConfiguration['keepAlive'] === true) {
+                if ($process->keepAlive() === true) {
                     // stopping the loop without terminating the process will keep it alive
                     $process->detach();
                     $loop->stop();
