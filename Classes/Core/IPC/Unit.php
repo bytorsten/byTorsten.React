@@ -32,10 +32,8 @@ class Unit
     public function work(\Closure $processor)
     {
         $process = $this->processManager->getProcess([
-            'socket' => Files::concatenatePaths([sys_get_temp_dir(), md5(getmypid()) . '.sock']),
             'production' => $this->environment->getContext()->isProduction()
         ]);
-        ['socket' => $domainSocketPath] = $this->processManager->getLastParameters();
 
         $loop = EventLoopFactory::create();
 
@@ -49,9 +47,9 @@ class Unit
             $throwable = $error;
         });
 
-        $process->ready()->done(function () use ($process, $loop, $processor, $domainSocketPath, &$result, &$throwable) {
+        $process->ready()->done(function () use ($process, $loop, $processor, &$result, &$throwable) {
 
-            $socket = new Socket($loop, $domainSocketPath);
+            $socket = new Socket($loop, $process->getSocketPath());
             $app = new App($socket, $process instanceof ProxyProcessInterface);
 
             $process->on('error', function (ProcessException $error) use ($app, $socket, $loop, &$throwable) {

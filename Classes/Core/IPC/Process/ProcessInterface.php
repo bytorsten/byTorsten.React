@@ -11,5 +11,5 @@ interface ProcessInterface extends BaseProcessInterface
     /**
      * @return array
      */
-    public function getPipeNames(): array;
+    public function getPipePaths(): array;
 }

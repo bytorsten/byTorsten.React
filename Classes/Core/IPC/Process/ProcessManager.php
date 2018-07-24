@@ -12,12 +12,6 @@ class ProcessManager
 {
 
     /**
-     * @Flow\InjectConfiguration("script.keepAlive")
-     * @var bool
-     */
-    protected $keepAlive;
-
-    /**
      * @Flow\Inject
      * @var ObjectManagerInterface
      */
@@ -35,18 +29,11 @@ class ProcessManager
     protected $activeProcesses = [];
 
     /**
-     * @var array
-     */
-    protected $lastParameters;
-
-    /**
      *
      */
     public function initializeObject()
     {
-        if ($this->keepAlive !== true) {
-            \register_shutdown_function([$this, 'killAllActiveProcesses']);
-        }
+        \register_shutdown_function([$this, 'killAllActiveProcesses']);
     }
 
     /**
@@ -58,11 +45,10 @@ class ProcessManager
         $identifier = md5(implode($parameters));
 
         if ($this->cache->has($identifier)) {
-            ['pid' => $pid, 'pipes' => $pipes, 'parameters' => $lastParameters] = $this->cache->get($identifier);
+            ['pid' => $pid, 'pipePaths' => $pipePaths, 'socketPath' => $socketPath] = $this->cache->get($identifier);
 
             if (posix_getpgid($pid) !== false) {
-                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipes);
-                $this->lastParameters = $lastParameters;
+                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $socketPath);
                 return $process;
             }
 
@@ -76,23 +62,14 @@ class ProcessManager
             $this->cache->set($identifier, [
                 'identifier' => $identifier,
                 'pid' => $process->getPid(),
-                'pipes' => $process->getPipeNames(),
-                'parameters' => $parameters
+                'pipePaths' => $process->getPipePaths(),
+                'socketPath' => $process->getSocketPath()
             ], ['process']);
         });
 
-        $this->lastParameters = $parameters;
         $this->registerProcess($process);
 
         return $process;
-    }
-
-    /**
-     * @return array|null
-     */
-    public function getLastParameters(): ?array
-    {
-        return $this->lastParameters;
     }
 
     /**
@@ -146,7 +123,9 @@ class ProcessManager
     public function killAllActiveProcesses()
     {
         foreach ($this->activeProcesses as $process) {
-            $process->stop(true);
+            if ($process->keepAlive() === false) {
+                $process->stop();
+            }
         }
     }
 }

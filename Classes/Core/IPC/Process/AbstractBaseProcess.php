@@ -24,6 +24,16 @@ abstract class AbstractBaseProcess extends EventEmitter implements BaseProcessIn
     protected $errors = [];
 
     /**
+     * @var array
+     */
+    protected $pipePaths;
+
+    /**
+     * @var string
+     */
+    protected $socketPath;
+
+    /**
      * @return bool
      */
     public function emitErrors(): bool
@@ -51,5 +61,22 @@ abstract class AbstractBaseProcess extends EventEmitter implements BaseProcessIn
         }
 
         return false;
+    }
+
+
+    /**
+     * @return array
+     */
+    public function getPipePaths(): array
+    {
+        return $this->pipePaths;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSocketPath(): string
+    {
+        return $this->socketPath;
     }
 }

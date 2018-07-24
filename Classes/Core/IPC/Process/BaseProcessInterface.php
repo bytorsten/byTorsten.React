@@ -36,4 +36,9 @@ interface BaseProcessInterface extends EventEmitterInterface
      * @return bool
      */
     public function keepAlive(): bool;
+
+    /**
+     * @return string
+     */
+    public function getSocketPath(): string;
 }
