@@ -2,6 +2,7 @@ import { rollup } from 'rollup';
 import babel from 'rollup-plugin-babel';
 import hypothetical from 'rollup-plugin-hypothetical';
 import alias from 'rollup-plugin-alias';
+import path from 'path';
 
 import { stripBundle, isProduction } from '@bytorsten/helper';
 
@@ -48,6 +49,7 @@ export default class Transpiler {
       plugins: [
         buildReactHelpers({
           helpers: this.helpers,
+          baseDirectory: path.dirname(this.serverFile),
           addResolvedPath: (name, path) => this.resolvedPaths[name] = path,
           addDependency: path => this.dependencies.push(path)
         }),

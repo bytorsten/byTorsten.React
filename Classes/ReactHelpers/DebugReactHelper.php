@@ -6,12 +6,11 @@ use byTorsten\React\Core\ReactHelper\AbstractReactHelper;
 class DebugReactHelper extends AbstractReactHelper
 {
     /**
-     * @param array $messages
+     * @param mixed $message
+     * @param string|null $title
      */
-    public function evaluate(array $messages): void
+    public function evaluate($message, string $title = null): void
     {
-        foreach ($messages as $message) {
-            \Neos\Flow\var_dump($message);
-        }
+        \Neos\Flow\var_dump($message, $title);
     }
 }

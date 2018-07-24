@@ -107,7 +107,7 @@ class ReactHelperManager
         foreach ($implementations as $className) {
             $packageKey = $objectManager->getPackageKeyByObjectName($className);
 
-            if (!isset($autoInclude[$packageKey]) || $autoInclude[$packageKey] !== true) {
+            if (!isset($autoInclude[$packageKey]) || $autoInclude[$packageKey] === false) {
                 continue;
             }
 
@@ -149,9 +149,10 @@ class ReactHelperManager
 
             /** @var Package $package */
             $package = $packageManager->getPackage($packageKey);
-
+            $shouldThrow = false;
             if (is_string($path)) {
                 $filePath = FilePathResolver::earlyResolveFilePath($path, $packageManager);
+                $shouldThrow = true;
             } else {
                 $filePath = Files::concatenatePaths([$package->getResourcesPath(), 'Private', 'React', 'index.js']);
             }
@@ -161,6 +162,8 @@ class ReactHelperManager
                 $helpers[$packageName][static::EXTENSION_KEY] = [
                     'filePath' => $filePath
                 ];
+            } else if ($shouldThrow) {
+                throw new ReactHelperException(sprintf('Specified file "%s" does not exists for package "%s"', $path, $packageKey));
             }
         }
 

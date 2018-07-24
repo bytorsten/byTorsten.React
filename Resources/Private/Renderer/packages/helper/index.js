@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import resolveRequire from 'resolve';
 
 export const rootPath = path.resolve(__dirname, '..');
 export const staticPath = path.join(rootPath, 'static');
@@ -25,5 +26,28 @@ export const loadFile = filename => new Promise((resolve, reject) => {
     } else {
       resolve(content);
     }
+  });
+});
+
+export const resolveModule = (name, options) => new Promise(resolve => {
+  resolveRequire(name, options, (error, result) => {
+    if (error) {
+      resolve(null);
+    } else {
+      resolve(result);
+    }
+  });
+});
+
+export const getModuleVersion = (name, options = {}) => new Promise(resolve => {
+
+  let version = null;
+  options.packageFilter = pkg => {
+    version = pkg.version || null;
+    return pkg;
+  };
+
+  resolveRequire(name, options, () => {
+    resolve(version);
   });
 });

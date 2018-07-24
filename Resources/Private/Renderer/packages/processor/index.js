@@ -1,7 +1,7 @@
 import { Module, createContext } from 'vm';
 import path from 'path';
-import resolveRequire from 'resolve';
 import { registerSource } from '@bytorsten/sourcemap';
+import { resolveModule } from '@bytorsten/helper';
 import { Module as SystemModule } from 'module';
 
 const toUrl = filename => `file://${filename}/`;
@@ -20,20 +20,13 @@ export default class Processor {
     Object.assign(this.context, context);
   }
 
-  require(moduleName) {
+  async require(moduleName) {
     if (~Object.keys(this.resolvedPaths).indexOf(moduleName)) {
       return require(this.resolvedPaths[moduleName]); //eslint-disable-line import/no-dynamic-require
     }
 
-    return new Promise((resolve, reject) => {
-      resolveRequire(moduleName, { basedir: this.paths[0], paths: this.paths.slice(1) }, (error, result) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve(require(result)); //eslint-disable-line import/no-dynamic-require
-      });
-    });
+    const modulePath = await resolveModule(moduleName, { basedir: this.paths[0], paths: this.paths.slice(1) });
+    return require(modulePath); //eslint-disable-line import/no-dynamic-require
   }
 
   resolveModuleFromBundle(specifier) {

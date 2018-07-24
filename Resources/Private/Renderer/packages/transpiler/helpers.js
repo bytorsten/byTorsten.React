@@ -1,6 +1,6 @@
 import path from 'path';
-import { loadFile } from '@bytorsten/helper';
-import resolveRequire from 'resolve';
+import { loadFile, resolveModule, getModuleVersion } from '@bytorsten/helper';
+import semverDiff from 'semver-diff';
 
 const containsPrefix = (array, prefix) => array.reduce((found, item) => {
   return found || prefix.indexOf(item) === 0;
@@ -22,10 +22,11 @@ const resolvePackageNameFromImporter = (importer, extensionDirNames) => {
   }, null);
 };
 
-export default ({ helpers, addResolvedPath, addDependency }) => {
+export default ({ helpers, baseDirectory, addResolvedPath, addDependency }) => {
   const helperModuleNames = Object.keys(helpers);
   const helperModuleRpcNames = helperModuleNames.map(key =>  `${key}/_rpc`);
   const resolvePaths = {};
+  const resolvedVersions = {};
 
   const extensionDirNames = helperModuleNames.reduce((files, moduleName) => {
     if (helpers[moduleName].__extension) {
@@ -35,9 +36,18 @@ export default ({ helpers, addResolvedPath, addDependency }) => {
     return files;
   }, {});
 
+  const getVersion = async (name, path) => {
+    const identifier = name + path;
+    if (typeof resolvedVersions[identifier] !== 'undefined') {
+      return resolvedVersions[identifier];
+    }
+
+    return resolvedVersions[identifier] = await getModuleVersion(name, { basedir: path });
+  };
+
   // replaces the import inside helpers with a placeholder
   // later on the processor will resolve that import with the correct node module
-  const registerExternalResolverPath = ({ importer, importee }) => {
+  const registerExternalResolverPath = async ({ importer, importee }) => {
     if (!importer) {
       return;
     }
@@ -45,15 +55,31 @@ export default ({ helpers, addResolvedPath, addDependency }) => {
     const packageName = resolvePackageNameFromImporter(importer, extensionDirNames);
 
     if (~helperModuleNames.indexOf(packageName) && extensionDirNames[packageName]) {
-      return new Promise(resolve => resolveRequire(importee, { basedir: extensionDirNames[packageName] }, (error, result) => {
-        if (error || !result) {
-          return resolve(null);
-        }
+      const extensionPath = extensionDirNames[packageName];
 
-        const resolveName = `${packageName}_${importee}`;
-        addResolvedPath(resolveName, result);
-        resolve(resolveName);
-      }));
+
+
+      const result = await resolveModule(importee, { basedir: extensionPath });
+      if (!result) {
+        return null;
+      }
+
+      const version = await getVersion(importee, extensionPath);
+      const parentVersion = await getVersion(importee, baseDirectory);
+
+      // we check if the required package from the helper is nearly the same as the package in our root bundle
+      // if there are nearly equal, we do not include it
+      if (version && parentVersion) {
+        const diff = semverDiff(version, parentVersion);
+
+        if (diff === null || diff === 'patch') {
+          return null;
+        }
+      }
+
+      const resolveName = `${packageName}_${importee}`;
+      addResolvedPath(resolveName, result);
+      return resolveName;
     }
   };
 
@@ -98,7 +124,7 @@ const buildHelperCode = async (moduleName, moduleHelpers, addResolvePath, addDep
   const helperModuleNames = Object.keys(moduleHelpers);
 
   const code = `export { ${helperModuleNames.join(', ')} } from '${moduleName}/_rpc';`;
-  
+
   if (extensionFile) {
     const extensionFileContent = await loadFile(extensionFile);
     addResolvePath(path.dirname(extensionFile));
