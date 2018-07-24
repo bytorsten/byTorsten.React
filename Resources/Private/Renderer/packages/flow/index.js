@@ -1,8 +1,9 @@
+import { EventEmitter } from 'events';
 import Server from './lib/Server';
 
 const READY_FLAG = '[[READY]]';
 
-export default class Flow {
+export default class Flow extends EventEmitter {
 
   static terminate(error) {
     console.error(error);
@@ -10,17 +11,14 @@ export default class Flow {
   }
 
   constructor(socketPath) {
+    super();
     this.stop = this.stop.bind(this);
-
-    this.readyPromise = new Promise(resolve => {
-      this.resolveReadyPromise = resolve;
-    });
 
     this.server = new Server(socketPath);
 
     this.server.on('ready', () => {
       process.stdout.write(READY_FLAG);
-      this.resolveReadyPromise();
+      this.emit('ready');
     });
 
     this.server.on('error', Flow.terminate);
@@ -55,11 +53,11 @@ export default class Flow {
   start() {
     this.server.listen();
     process.on('SIGTERM', this.stop);
-    return this.readyPromise;
   }
 
   async stop() {
     await this.server.close();
+    this.emit('stop');
     process.exit(0);
   }
 }

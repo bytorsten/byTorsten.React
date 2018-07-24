@@ -97,6 +97,12 @@ class App extends Flow {
 }
 
 const renderer = new App(options.socket);
-renderer.start().then(() => {
+renderer.on('ready', () => {
   console.log(`Rendering engine online in ${isProduction() ? 'production' : 'development'}`);
 });
+
+renderer.on('stop', () => {
+  console.log('Rendering engine shutting down');
+});
+
+renderer.start();
