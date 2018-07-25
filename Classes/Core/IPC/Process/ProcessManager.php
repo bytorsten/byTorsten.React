@@ -104,10 +104,10 @@ class ProcessManager
     {
         $count = 0;
         $processInfos = $this->cache->getByTag('process');
-        foreach ($processInfos as ['identifier' => $identifier, 'pid' => $pid, 'pipes' => $pipes]) {
+        foreach ($processInfos as ['identifier' => $identifier, 'pid' => $pid, 'pipePaths' => $pipePaths, 'socketPath' => $socketPath]) {
             if (posix_getpgid($pid) !== false) {
                 $count ++;
-                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipes);
+                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $socketPath);
                 $process->stop($force);
             }
 
