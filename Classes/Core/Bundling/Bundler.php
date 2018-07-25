@@ -94,7 +94,7 @@ class Bundler
         /** @var Bundle $clientBundle */
         $clientBundle = null;
 
-        $unit = new Unit();
+        $unit = new Unit($this->controllerContext);
         $unit->work(function (App $app) use ($clientScriptPath, $baseBundle, $identifier, $legacy, $meta, &$clientBundle) {
             $app->call('bundle', [
                 'identifier' => $identifier,

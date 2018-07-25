@@ -1,6 +1,7 @@
 <?php
 namespace byTorsten\React\Core\IPC;
 
+use Neos\Flow\Mvc\Controller\ControllerContext;
 use React\Promise\Deferred;
 use React\Promise\Promise;
 
@@ -22,17 +23,24 @@ class App
     protected $messageIndex = 0;
 
     /**
+     * @var ControllerContext
+     */
+    protected $controllerContext;
+
+    /**
      * @var bool
      */
     protected $proxy = false;
 
     /**
      * @param Socket $socket
+     * @param ControllerContext $controllerContext
      * @param bool $proxy
      */
-    public function __construct(Socket $socket, bool $proxy)
+    public function __construct(Socket $socket, ControllerContext $controllerContext, bool $proxy)
     {
         $this->socket = $socket;
+        $this->controllerContext = $controllerContext;
         $this->proxy = $proxy;
     }
 
@@ -85,6 +93,14 @@ class App
             unset($this->deferrers[$type]);
             $deferred->reject($throwable);
         }
+    }
+
+    /**
+     * @return ControllerContext
+     */
+    public function getControllerContext(): ControllerContext
+    {
+        return $this->controllerContext;
     }
 
     /**

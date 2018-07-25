@@ -84,13 +84,14 @@ class ReactCommandController extends CommandController
         }
 
         $identifier = md5($serverScript);
-        $unit = new Unit();
 
         $request = new ActionRequest(Request::createFromEnvironment());
         $uriBuilder = new UriBuilder();
         $uriBuilder->setRequest($request);
 
         $controllerContext = new ControllerContext($request, new Response(), new Arguments(), $uriBuilder);
+
+        $unit = new Unit($controllerContext);
 
         $unit->work(function (App $app) use ($clientScript, $serverScript, $identifier) {
             $this->outputLine();

@@ -189,7 +189,7 @@ class ReactView extends AbstractView
         $this->internalData['clientChunkName'] = $this->getScriptName();
 
         $renderingResult = null;
-        $unit = new Unit();
+        $unit = new Unit($this->controllerContext);
         $unit->work(function (App $app) use ($identifier, $serverScript, $clientScript, &$renderingResult) {
 
             $transpiler = new Transpiler($app);

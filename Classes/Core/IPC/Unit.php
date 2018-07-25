@@ -2,8 +2,8 @@
 namespace byTorsten\React\Core\IPC;
 
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Utility\Environment;
-use Neos\Utility\Files;
 use React\EventLoop\Factory as EventLoopFactory;
 use byTorsten\React\Core\IPC\Process\ProcessException;
 use byTorsten\React\Core\IPC\Process\ProxyProcessInterface;
@@ -23,6 +23,19 @@ class Unit
      * @var Environment
      */
     protected $environment;
+
+    /**
+     * @var ControllerContext
+     */
+    protected $controllerContext;
+
+    /**
+     * @param ControllerContext $controllerContext
+     */
+    public function __construct(ControllerContext $controllerContext)
+    {
+        $this->controllerContext = $controllerContext;
+    }
 
     /**
      * @param \Closure $processor
@@ -50,7 +63,7 @@ class Unit
         $process->ready()->done(function () use ($process, $loop, $processor, &$result, &$throwable) {
 
             $socket = new Socket($loop, $process->getSocketPath());
-            $app = new App($socket, $process instanceof ProxyProcessInterface);
+            $app = new App($socket, $this->controllerContext, $process instanceof ProxyProcessInterface);
 
             $process->on('error', function (ProcessException $error) use ($app, $socket, $loop, &$throwable) {
                 $app->cancelAllPromises($error);
