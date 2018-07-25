@@ -19,7 +19,8 @@ class ResourceUriReactHelper extends AbstractReactHelper
      * @return string
      * @throws ReactHelperException
      */
-    public function evaluate(string $path): string {
+    public function evaluate(string $path): string
+    {
         if (strpos($path, 'resource://') !== 0) {
             throw new ReactHelperException(sprintf('resource path "%s" does not start with "resource://"', $path));
         }

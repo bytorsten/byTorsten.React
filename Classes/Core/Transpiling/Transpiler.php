@@ -87,10 +87,10 @@ class Transpiler
      * @param array $hypotheticalFiles
      * @param array $aliases
      * @param array $additionalDependencies
-     * @param BundlerHelper $bundleHelper
+     * @param BundlerHelper|null $bundleHelper
      * @return ExtendedPromiseInterface
      */
-    public function transpile(string $identifier, string $serverScript, string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = [], BundlerHelper $bundleHelper): ExtendedPromiseInterface
+    public function transpile(string $identifier, string $serverScript, string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = [], BundlerHelper $bundleHelper = null): ExtendedPromiseInterface
     {
         if ($this->fileManager->hasServerCode($identifier)) {
             $bundle = $this->stripClientModule($this->fileManager->getServerBundle($identifier), $clientScript);
@@ -112,7 +112,9 @@ class Transpiler
             $bundle = Bundle::create($rawBundle, $resolvedPaths);
 
             $this->fileManager->persistServerBundle($identifier, $clientScript, $serverScript, $bundle, $allDependencies);
-            $this->fileManager->persistBundleMeta($identifier, $bundleHelper);
+            if ($bundleHelper !== null) {
+                $this->fileManager->persistBundleMeta($identifier, $bundleHelper);
+            }
 
             $assetsBundle = $this->addAssetSourceMapUrls($identifier, Bundle::create($assets));
             $this->fileManager->persistAssets($identifier, $assetsBundle, $this->app->getControllerContext());
