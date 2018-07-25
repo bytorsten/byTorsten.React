@@ -23,6 +23,19 @@
         toLowerCase: false
 
 -
+  name: 'Asset Chunk'
+  uriPattern: 'asset/{identifier}/{chunkname}'
+  defaults:
+    '@action': 'asset'
+    '@package': 'byTorsten.React'
+    '@controller': 'Chunk'
+  appendExceedingArguments: true
+  routeParts:
+      chunkname:
+        toLowerCase: false
+
+
+-
   name: 'RPC'
   uriPattern: 'rpc'
   defaults:

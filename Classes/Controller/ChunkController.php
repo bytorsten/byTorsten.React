@@ -6,6 +6,8 @@ use Neos\Flow\Mvc\Controller\ActionController;
 use Neos\Flow\Mvc\Exception\StopActionException;
 use byTorsten\React\Core\Bundling\Bundler;
 use byTorsten\React\Core\Cache\FileManager;
+use Neos\Utility\Files;
+use Neos\Utility\MediaTypes;
 
 class ChunkController extends ActionController
 {
@@ -140,6 +142,24 @@ class ChunkController extends ActionController
             throw new StopActionException();
         }
 
+        return $content;
+    }
+
+    /**
+     * @param string $identifier
+     * @param string $chunkname
+     * @return string
+     * @throws StopActionException
+     */
+    public function assetAction(string $identifier, string $chunkname): string
+    {
+        $this->compareETag($identifier);
+        $this->response->setHeader('Content-Type', MediaTypes::getMediaTypeFromFilename($chunkname));
+        $content = $this->fileManager->getAsset($identifier, $chunkname);
+        if ($content === null) {
+            $this->response->setStatus(404);
+            throw new StopActionException();
+        }
         return $content;
     }
 }

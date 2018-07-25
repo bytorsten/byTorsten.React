@@ -37,12 +37,6 @@ class ReactView extends AbstractView
     protected $packageManager;
 
     /**
-     * @Flow\Inject
-     * @var FileManager
-     */
-    protected $fileManager;
-
-    /**
      * @var array
      */
     protected $internalData = [];
@@ -193,11 +187,17 @@ class ReactView extends AbstractView
         $unit->work(function (App $app) use ($identifier, $serverScript, $clientScript, &$renderingResult) {
 
             $transpiler = new Transpiler($app);
-            $transpiler->transpile($identifier, $serverScript, $clientScript, $this->hypotheticalFiles, $this->aliases, $this->additionalDependencies)->done(function (Bundle $serverBundle) use ($identifier, $serverScript, $app, &$renderingResult) {
+            $transpiler->transpile(
+                $identifier,
+                $serverScript,
+                $clientScript,
+                $this->hypotheticalFiles,
+                $this->aliases,
+                $this->additionalDependencies,
+                $this->bundleHelper
+            )->done(function (Bundle $serverBundle) use ($identifier, $serverScript, $app, &$renderingResult) {
 
-                $this->fileManager->persistBundleMeta($identifier, $this->bundleHelper);
-
-                $renderer = new Renderer($app, $this->controllerContext);
+                $renderer = new Renderer($app);
 
                 $renderDeferred = new Deferred();
                 $renderPromise = $renderDeferred->promise();

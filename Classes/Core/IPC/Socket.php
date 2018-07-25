@@ -96,6 +96,7 @@ class Socket extends EventEmitter
     /**
      * @param string $chunk
      * @throws SocketException
+     * @throws \Throwable
      */
     protected function handleData(string $chunk)
     {
@@ -138,7 +139,12 @@ class Socket extends EventEmitter
                 };
             }
 
-            $this->emit($decodedMessage['command'], $arguments);
+            try {
+                $this->emit($decodedMessage['command'], $arguments);
+            } catch (\Throwable $throwable) {
+                $this->close();
+                throw $throwable;
+            }
 
             if (strlen($left) > 0) {
                 $this->handleData($left);

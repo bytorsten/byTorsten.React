@@ -1,6 +1,7 @@
 <?php
 namespace byTorsten\React\Core\IPC;
 
+use byTorsten\React\Core\ReactHelper\ReactHelperManager;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Utility\Environment;
@@ -25,9 +26,16 @@ class Unit
     protected $environment;
 
     /**
+     * @Flow\Inject
+     * @var ReactHelperManager
+     */
+    protected $reactHelperManager;
+
+    /**
      * @var ControllerContext
      */
     protected $controllerContext;
+
 
     /**
      * @param ControllerContext $controllerContext
@@ -64,6 +72,13 @@ class Unit
 
             $socket = new Socket($loop, $process->getSocketPath());
             $app = new App($socket, $this->controllerContext, $process instanceof ProxyProcessInterface);
+
+            $app->on('rpc', function ($data, \Closure $reply) use ($app) {
+                $helper = $data['helper'];
+                unset($data['helper']);
+                $response = $this->reactHelperManager->invokeHelper($app->getControllerContext(), $helper, $data);
+                $reply($response);
+            });
 
             $process->on('error', function (ProcessException $error) use ($app, $socket, $loop, &$throwable) {
                 $app->cancelAllPromises($error);

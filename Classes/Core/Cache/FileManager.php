@@ -1,11 +1,12 @@
 <?php
 namespace byTorsten\React\Core\Cache;
 
-use byTorsten\React\Core\View\BundlerHelper;
 use Neos\Flow\Annotations as Flow;
 use Neos\Cache\Frontend\FrontendInterface;
+use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Utility\Environment;
+use byTorsten\React\Core\View\BundlerHelper;
 use byTorsten\React\Core\Bundle;
 
 /**
@@ -13,8 +14,8 @@ use byTorsten\React\Core\Bundle;
  */
 class FileManager
 {
-    const SEPARATOR = '_';
     const LEGACY_PREFIX = '_legacy_';
+    const ASSET_PREFIX = '_asset_';
     const SERVER_BUNDLE = '[SERVER_BUNDLE]';
     const CLIENT_CODE_FLAG = '[CLIENT_CODE_FLAG]';
     const LEGACY_CLIENT_CODE_FLAG = '[LEGACY_CLIENT_CODE_FLAG]';
@@ -23,6 +24,7 @@ class FileManager
     const SERVER_SCRIPT_PATH = '[SERVER_SCRIPT]';
     const REVISION = '[REVISION]';
     const BUNDLE_META = '[BUNDLE_META]';
+    const ASSET_URIS = '[ASSET_URIS]';
 
     /**
      * @Flow\Inject
@@ -67,6 +69,30 @@ class FileManager
 
     /**
      * @param string $identifier
+     * @param Bundle $assetsBundle
+     * @param ControllerContext $controllerContext
+     */
+    public function persistAssets(string $identifier, Bundle $assetsBundle, ControllerContext $controllerContext)
+    {
+        $tags = $this->get($identifier, static::TAGS);
+        $uriBuilder = $controllerContext->getUriBuilder()->reset();
+        $assetUris = [];
+
+        foreach ($assetsBundle->getModules() as $filename => $module) {
+            $this->setAsset($identifier, $filename, $module->getCode(), $tags);
+            $assetUris[$filename] = $uriBuilder->uriFor('asset', ['identifier' => $identifier, 'chunkname' => $filename], 'Chunk', 'byTorsten.React');
+
+            $map = $module->getMap();
+            if ($map !== null) {
+                $this->setAsset($identifier, $filename . '.map', $map, $tags);
+            }
+        }
+
+        $this->set($identifier, static::ASSET_URIS, $assetUris, $tags);
+    }
+
+    /**
+     * @param string $identifier
      * @param Bundle $bundle
      */
     public function persistClientBundle(string $identifier, Bundle $bundle)
@@ -76,7 +102,11 @@ class FileManager
 
         foreach ($bundle->getModules() as $filename => $module) {
             $this->set($identifier, $filename, $module->getCode(), $tags);
-            $this->set($identifier, $filename . '.map', $module->getMap(), $tags);
+
+            $map = $module->getMap();
+            if ($map !== null) {
+                $this->set($identifier, $filename . '.map', $map, $tags);
+            }
         }
     }
 
@@ -100,8 +130,12 @@ class FileManager
         $this->set($identifier, static::LEGACY_CLIENT_CODE_FLAG, true, $tags);
 
         foreach ($bundle->getModules() as $filename => $module) {
-            $this->setLegacy($identifier, static::SEPARATOR . $filename, $module->getCode(), $tags);
-            $this->setLegacy($identifier, static::SEPARATOR . $filename . '.map', $module->getMap(), $tags);
+            $this->setLegacy($identifier, $filename, $module->getCode(), $tags);
+
+            $map = $module->getMap();
+            if ($map !== null) {
+                $this->setLegacy($identifier, $filename . '.map', $module->getMap(), $tags);
+            }
         }
     }
 
@@ -156,7 +190,7 @@ class FileManager
      */
     public function hasServerCode(string $identifier): bool
     {
-        return $this->has($identifier, static::SERVER_BUNDLE);
+        return $this->hasFlag($identifier, static::SERVER_BUNDLE);
     }
 
     /**
@@ -165,7 +199,7 @@ class FileManager
      */
     public function hasClientCode(string $identifier): bool
     {
-        return $this->has($identifier, static::CLIENT_CODE_FLAG);
+        return $this->hasFlag($identifier, static::CLIENT_CODE_FLAG);
     }
 
     /**
@@ -174,15 +208,7 @@ class FileManager
      */
     public function hasLegacyClientCode(string $identifier): bool
     {
-        return $this->has($identifier, static::LEGACY_CLIENT_CODE_FLAG);
-    }
-
-    /**
-     * @param string $identifier
-     */
-    public function clearCode(string $identifier)
-    {
-        $this->cache->flushByTag($identifier);
+        return $this->hasFlag($identifier, static::LEGACY_CLIENT_CODE_FLAG);
     }
 
     /**
@@ -201,7 +227,7 @@ class FileManager
      */
     public function get(string $identifier, string $key)
     {
-        $entryIdentifier = $this->sanitizeIdentifier($identifier . static::SEPARATOR . $key);
+        $entryIdentifier = $this->sanitizeIdentifier($identifier . $key);
 
         if ($this->cache->has($entryIdentifier)) {
             return $this->cache->get($entryIdentifier);
@@ -213,11 +239,35 @@ class FileManager
     /**
      * @param string $identifier
      * @param string $key
-     * @return mixed|null
+     * @return null|string
      */
-    public function getLegacy(string $identifier, string $key)
+    public function getLegacy(string $identifier, string $key): ?string
     {
         return $this->get($identifier, static::LEGACY_PREFIX . $key);
+    }
+
+    /**
+     * @param string $identifier
+     * @param string $key
+     * @return null|string
+     */
+    public function getAsset(string $identifier, string $key): ?string
+    {
+        return $this->get($identifier, static::ASSET_PREFIX . $key);
+    }
+
+    /**
+     * @param string $identifier
+     * @return array
+     */
+    public function getAssetUris(string $identifier): array
+    {
+        $entryIdentifier = $this->sanitizeIdentifier($identifier.  static::ASSET_URIS);
+        if ($this->cache->has($entryIdentifier)) {
+            return $this->cache->get($entryIdentifier);
+        }
+
+        return [];
     }
 
     /**
@@ -229,7 +279,7 @@ class FileManager
     protected function set(string $identifier, string $key, $content, array $tags)
     {
         if ($content !== null) {
-            $entryIdentifier = $this->sanitizeIdentifier($identifier . static::SEPARATOR . $key);
+            $entryIdentifier = $this->sanitizeIdentifier($identifier . $key);
             $this->cache->set($entryIdentifier, $content, $tags);
         }
     }
@@ -248,11 +298,22 @@ class FileManager
     /**
      * @param string $identifier
      * @param string $key
+     * @param $content
+     * @param array $tags
+     */
+    protected function setAsset(string $identifier, string $key, $content, array $tags)
+    {
+        $this->set($identifier, static::ASSET_PREFIX . $key, $content, $tags);
+    }
+
+    /**
+     * @param string $identifier
+     * @param string $key
      * @return bool
      */
-    protected function has(string $identifier, string $key): bool
+    protected function hasFlag(string $identifier, string $key): bool
     {
-        $entryIdentifier = $this->sanitizeIdentifier($identifier . static::SEPARATOR . $key);
+        $entryIdentifier = $this->sanitizeIdentifier($identifier . $key);
         return $this->cache->has($entryIdentifier);
     }
 }

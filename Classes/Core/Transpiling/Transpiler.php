@@ -9,6 +9,7 @@ use byTorsten\React\Core\Cache\FileManager;
 use byTorsten\React\Core\ReactHelper\ReactHelperManager;
 use byTorsten\React\Core\IPC\App;
 use byTorsten\React\Core\Bundle;
+use byTorsten\React\Core\View\BundlerHelper;
 
 class Transpiler
 {
@@ -57,14 +58,39 @@ class Transpiler
 
     /**
      * @param string $identifier
+     * @param Bundle $assetBundle
+     * @return Bundle
+     */
+    public function addAssetSourceMapUrls(string $identifier, Bundle $assetBundle): Bundle
+    {
+        if ($this->environment->getContext()->isProduction()) {
+            return $assetBundle;
+        }
+
+        $uriBuilder = $this->app->getControllerContext()->getUriBuilder();
+        $dummyUri = $uriBuilder->uriFor('asset', ['identifier' => $identifier, 'chunkname' => '__filename__.map'], 'Chunk', 'byTorsten.React');
+
+        foreach ($assetBundle->getModules() as $filename => $module) {
+            if ($module->getMap() !== null) {
+                $sourceMapUrl = str_replace('__filename__', $filename, $dummyUri);
+                $module->appendCode(sprintf('/*# sourceMappingURL=%s */', $sourceMapUrl) . PHP_EOL);
+            }
+        }
+
+        return $assetBundle;
+    }
+
+    /**
+     * @param string $identifier
      * @param string $serverScript
      * @param string $clientScript
      * @param array $hypotheticalFiles
      * @param array $aliases
      * @param array $additionalDependencies
+     * @param BundlerHelper $bundleHelper
      * @return ExtendedPromiseInterface
      */
-    public function transpile(string $identifier, string $serverScript, string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = []): ExtendedPromiseInterface
+    public function transpile(string $identifier, string $serverScript, string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = [], BundlerHelper $bundleHelper): ExtendedPromiseInterface
     {
         if ($this->fileManager->hasServerCode($identifier)) {
             $bundle = $this->stripClientModule($this->fileManager->getServerBundle($identifier), $clientScript);
@@ -79,13 +105,18 @@ class Transpiler
             'extractDependencies' => $this->environment->getContext()->isDevelopment(),
             'hypotheticalFiles' => $hypotheticalFiles,
             'aliases' => $aliases
-        ])->then(function (array $transpileResult) use ($identifier, $serverScript, $clientScript, $additionalDependencies) {
-            ['bundle' => $rawBundle, 'dependencies' => $dependencies, 'resolvedPaths' => $resolvedPaths] = $transpileResult;
+        ])->then(function (array $transpileResult) use ($identifier, $serverScript, $clientScript, $additionalDependencies, $bundleHelper) {
+            ['bundle' => $rawBundle, 'dependencies' => $dependencies, 'resolvedPaths' => $resolvedPaths, 'assets' => $assets] = $transpileResult;
 
             $allDependencies = array_merge($dependencies, $additionalDependencies);
             $bundle = Bundle::create($rawBundle, $resolvedPaths);
 
             $this->fileManager->persistServerBundle($identifier, $clientScript, $serverScript, $bundle, $allDependencies);
+            $this->fileManager->persistBundleMeta($identifier, $bundleHelper);
+
+            $assetsBundle = $this->addAssetSourceMapUrls($identifier, Bundle::create($assets));
+            $this->fileManager->persistAssets($identifier, $assetsBundle, $this->app->getControllerContext());
+
             return $this->stripClientModule($bundle, $clientScript);
         });
     }
