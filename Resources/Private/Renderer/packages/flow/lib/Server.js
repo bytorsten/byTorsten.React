@@ -1,6 +1,5 @@
 import { createServer } from 'net';
 import { EventEmitter } from 'events';
-import fs from 'fs';
 
 import Protocol from './Protocol';
 
@@ -61,27 +60,10 @@ export default class Server extends EventEmitter {
       socket.on('data', protocol.add.bind(protocol));
     });
 
-    let retired = false;
-
     this._server.once('listening', () => this.emit('ready', this.address));
 
     this._server.on('error', error => {
-      if (error.code === 'EADDRINUSE') {
-        if (retired) {
-          return this.emit('error', error);
-        }
-
-        retired = true;
-        fs.unlink(error.address, error => {
-          if (error) {
-            return this.emit('error', error);
-          }
-
-          this.listen();
-        });
-      } else {
-        this.emit('error', error);
-      }
+      this.emit('error', error);
     });
   }
 
@@ -89,7 +71,7 @@ export default class Server extends EventEmitter {
     this._server.listen(this.address);
   }
 
-  close() {
-    return new Promise(resolve => this._server.close(resolve));
+  close(cb) {
+    this._server.close(cb);
   }
 }

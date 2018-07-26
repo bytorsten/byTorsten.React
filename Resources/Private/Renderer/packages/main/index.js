@@ -6,6 +6,7 @@ import Transpiler from '@bytorsten/transpiler';
 import Renderer from '@bytorsten/renderer';
 import Bundler from '@bytorsten/bundler';
 import { isProduction } from '@bytorsten/helper';
+import path from 'path';
 
 import './include';
 
@@ -15,8 +16,9 @@ process.on('unhandledRejection', Flow.terminate);
 
 
 const options = parseCommandLineArgs([
-  { name: 'production', type: Boolean }
   { name: 'address', type: String },
+  { name: 'production', type: Boolean },
+  { name: 'threads', type: Number }
 ]);
 
 if (!options.socket) {
@@ -27,8 +29,8 @@ process.env.NODE_ENV = options.production ? 'production' : 'development';
 
 class App extends Flow {
 
-  constructor(socket) {
-    super(socket);
+  constructor({ address, threads = 1 }) {
+    super({ address, threads });
     this.renderUnits = {};
     this.cacheBundles = {};
   }
@@ -98,9 +100,10 @@ class App extends Flow {
   }
 }
 
-renderer.on('ready', () => {
-  console.log(`Rendering engine online in ${isProduction() ? 'production' : 'development'}`);
 const renderer = new App(options);
+renderer.on('ready', address => {
+  const parsedAddress = typeof address === 'string' ? path.parse(address).base : `${address.host}:${address.port}`;
+  console.log(`Rendering engine online in ${isProduction() ? 'production' : 'development'} on ${parsedAddress}`);
 });
 
 renderer.on('stop', () => {

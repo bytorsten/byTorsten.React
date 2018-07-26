@@ -1,4 +1,7 @@
 import { EventEmitter } from 'events';
+import cluster from 'cluster';
+import fs from 'fs';
+
 import Server from './lib/Server';
 
 const READY_FLAG = '[[READY]]';
@@ -10,19 +13,22 @@ export default class Flow extends EventEmitter {
     process.exit(1);
   }
 
-  constructor(socketPath) {
+  constructor({ address, threads }) {
     super();
-    this.stop = this.stop.bind(this);
+    this.threads = threads;
+    this.address = address;
+  }
 
-    this.server = new Server(socketPath);
+  createServer() {
+    const server = new Server(this.address);
 
-    this.server.on('ready', () => {
+    server.on('ready', address => {
       process.stdout.write(READY_FLAG);
-      this.emit('ready');
+      this.emit('ready', address);
     });
 
-    this.server.on('error', Flow.terminate);
-    this.server.on('command', async ({ command, data }, { reply, send }) => {
+    server.on('error', Flow.terminate);
+    server.on('command', async ({ command, data }, { reply, send }) => {
       if (!this[command]) {
         return Flow.terminate(new Error(`Unknown command ${command}`));
       }
@@ -48,16 +54,45 @@ export default class Flow extends EventEmitter {
         reply(result);
       }
     });
+
+    return server;
   }
 
   start() {
-    this.server.listen();
-    process.on('SIGTERM', this.stop);
+
+    if (cluster.isMaster) {
+      if (this.address.startsWith('unix://')) {
+        try {
+          fs.unlinkSync(this.address.replace(/^unix:\/\//, ''));
+        } catch (error) {
+          // do nothing
+        }
+      }
+
+      process.on('SIGTERM', () => this.stop());
+
+      if (this.threads === 1) {
+        this.server = this.createServer();
+        this.server.listen();
+      } else {
+        for (let i = 0; i < this.threads; i++) {
+          cluster.fork();
+        }
+      }
+    } else {
+      this.server = this.createServer();
+      this.server.listen();
+    }
+
+
   }
 
-  async stop() {
-    await this.server.close();
-    this.emit('stop');
-    process.exit(0);
+  stop() {
+    const callback = () => process.exit(0);
+    if (this.threads === 1) {
+      this.server.close(callback);
+    } else if (cluster.isMaster) {
+      cluster.disconnect(callback);
+    }
   }
 }
