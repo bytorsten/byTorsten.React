@@ -5,10 +5,15 @@ import fs from 'fs';
 import Protocol from './Protocol';
 
 export default class Server extends EventEmitter {
-  constructor(socketFile) {
+  constructor(address) {
     super();
-    this._socketFile = socketFile;
 
+    if (address.startsWith('unix://')) {
+      this.address = address.replace(/^unix:\/\//, '');
+    } else {
+      const [host, port ] = address.split(':');
+      this.address = { host, port };
+    }
 
     this._server = createServer(socket => {
       const protocol = new Protocol();
@@ -58,7 +63,7 @@ export default class Server extends EventEmitter {
 
     let retired = false;
 
-    this._server.once('listening', () => this.emit('ready'));
+    this._server.once('listening', () => this.emit('ready', this.address));
 
     this._server.on('error', error => {
       if (error.code === 'EADDRINUSE') {
@@ -81,7 +86,7 @@ export default class Server extends EventEmitter {
   }
 
   listen() {
-    this._server.listen(this._socketFile);
+    this._server.listen(this.address);
   }
 
   close() {

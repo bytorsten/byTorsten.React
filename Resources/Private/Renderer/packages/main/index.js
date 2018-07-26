@@ -15,8 +15,8 @@ process.on('unhandledRejection', Flow.terminate);
 
 
 const options = parseCommandLineArgs([
-  { name: 'socket', type: String },
   { name: 'production', type: Boolean }
+  { name: 'address', type: String },
 ]);
 
 if (!options.socket) {
@@ -98,9 +98,9 @@ class App extends Flow {
   }
 }
 
-const renderer = new App(options.socket);
 renderer.on('ready', () => {
   console.log(`Rendering engine online in ${isProduction() ? 'production' : 'development'}`);
+const renderer = new App(options);
 });
 
 renderer.on('stop', () => {

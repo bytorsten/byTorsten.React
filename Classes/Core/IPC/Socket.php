@@ -30,7 +30,7 @@ class Socket extends EventEmitter
     /**
      * @var string
      */
-    protected $domainSocketPath;
+    protected $address;
 
     /**
      * @var string
@@ -44,12 +44,12 @@ class Socket extends EventEmitter
 
     /**
      * @param LoopInterface $loop
-     * @param string $domainSocketPath
+     * @param string $address
      */
-    public function __construct(LoopInterface $loop, string $domainSocketPath)
+    public function __construct(LoopInterface $loop, string $address)
     {
         $this->loop = $loop;
-        $this->domainSocketPath = $domainSocketPath;
+        $this->address = $address;
     }
 
     /**
@@ -58,10 +58,9 @@ class Socket extends EventEmitter
     public function connect(): Promise
     {
         $connector = new Connector($this->loop);
-        $serverAddress = 'unix://' . $this->domainSocketPath;
-
         $deferred = new Deferred();
-        $connector->connect($serverAddress)->then(function (ConnectionInterface $connection) use ($deferred) {
+
+        $connector->connect($this->address)->then(function (ConnectionInterface $connection) use ($deferred) {
             $socketTimeout = $this->configuration['socketTimeout'];
 
             if ($socketTimeout > 0) {

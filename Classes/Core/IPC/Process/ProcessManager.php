@@ -45,10 +45,10 @@ class ProcessManager
         $identifier = md5(implode($parameters));
 
         if ($this->cache->has($identifier)) {
-            ['pid' => $pid, 'pipePaths' => $pipePaths, 'socketPath' => $socketPath] = $this->cache->get($identifier);
+            ['pid' => $pid, 'pipePaths' => $pipePaths, 'address' => $address] = $this->cache->get($identifier);
 
             if (posix_getpgid($pid) !== false) {
-                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $socketPath);
+                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $address);
                 return $process;
             }
 
@@ -63,7 +63,7 @@ class ProcessManager
                 'identifier' => $identifier,
                 'pid' => $process->getPid(),
                 'pipePaths' => $process->getPipePaths(),
-                'socketPath' => $process->getSocketPath()
+                'address' => $process->getAddress()
             ], ['process']);
         });
 
@@ -104,10 +104,11 @@ class ProcessManager
     {
         $count = 0;
         $processInfos = $this->cache->getByTag('process');
-        foreach ($processInfos as ['identifier' => $identifier, 'pid' => $pid, 'pipePaths' => $pipePaths, 'socketPath' => $socketPath]) {
+        foreach ($processInfos as ['identifier' => $identifier, 'pid' => $pid, 'pipePaths' => $pipePaths, 'address' => $address]) {
             if (posix_getpgid($pid) !== false) {
                 $count ++;
-                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $socketPath);
+                /** @var ProcessInterface $process */
+                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $address);
                 $process->stop($force);
             }
 

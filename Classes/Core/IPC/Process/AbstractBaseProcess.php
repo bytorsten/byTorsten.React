@@ -31,7 +31,7 @@ abstract class AbstractBaseProcess extends EventEmitter implements BaseProcessIn
     /**
      * @var string
      */
-    protected $socketPath;
+    protected $address;
 
     /**
      * @return bool
@@ -75,8 +75,8 @@ abstract class AbstractBaseProcess extends EventEmitter implements BaseProcessIn
     /**
      * @return string
      */
-    public function getSocketPath(): string
+    public function getAddress(): string
     {
-        return $this->socketPath;
+        return $this->address;
     }
 }
