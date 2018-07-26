@@ -58,30 +58,6 @@ class Transpiler
 
     /**
      * @param string $identifier
-     * @param Bundle $assetBundle
-     * @return Bundle
-     */
-    public function addAssetSourceMapUrls(string $identifier, Bundle $assetBundle): Bundle
-    {
-        if ($this->environment->getContext()->isProduction()) {
-            return $assetBundle;
-        }
-
-        $uriBuilder = $this->app->getControllerContext()->getUriBuilder();
-        $dummyUri = $uriBuilder->uriFor('asset', ['identifier' => $identifier, 'chunkname' => '__filename__.map'], 'Chunk', 'byTorsten.React');
-
-        foreach ($assetBundle->getModules() as $filename => $module) {
-            if ($module->getMap() !== null) {
-                $sourceMapUrl = str_replace('__filename__', $filename, $dummyUri);
-                $module->appendCode(sprintf('/*# sourceMappingURL=%s */', $sourceMapUrl) . PHP_EOL);
-            }
-        }
-
-        return $assetBundle;
-    }
-
-    /**
-     * @param string $identifier
      * @param string $serverScript
      * @param string $clientScript
      * @param array $hypotheticalFiles
@@ -106,7 +82,7 @@ class Transpiler
             'hypotheticalFiles' => $hypotheticalFiles,
             'aliases' => $aliases
         ])->then(function (array $transpileResult) use ($identifier, $serverScript, $clientScript, $additionalDependencies, $bundleHelper) {
-            ['bundle' => $rawBundle, 'dependencies' => $dependencies, 'resolvedPaths' => $resolvedPaths, 'assets' => $assets] = $transpileResult;
+            ['bundle' => $rawBundle, 'dependencies' => $dependencies, 'resolvedPaths' => $resolvedPaths] = $transpileResult;
 
             $allDependencies = array_merge($dependencies, $additionalDependencies);
             $bundle = Bundle::create($rawBundle, $resolvedPaths);
@@ -115,9 +91,6 @@ class Transpiler
             if ($bundleHelper !== null) {
                 $this->fileManager->persistBundleMeta($identifier, $bundleHelper);
             }
-
-            $assetsBundle = $this->addAssetSourceMapUrls($identifier, Bundle::create($assets));
-            $this->fileManager->persistAssets($identifier, $assetsBundle, $this->app->getControllerContext());
 
             return $this->stripClientModule($bundle, $clientScript);
         });

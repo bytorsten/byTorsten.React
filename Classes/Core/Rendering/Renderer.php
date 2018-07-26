@@ -1,20 +1,12 @@
 <?php
 namespace byTorsten\React\Core\Rendering;
 
-use Neos\Flow\Annotations as Flow;
 use React\Promise\ExtendedPromiseInterface;
 use byTorsten\React\Core\Bundle;
 use byTorsten\React\Core\IPC\App;
-use byTorsten\React\Core\Cache\FileManager;
 
 class Renderer
 {
-    /**
-     * @Flow\Inject
-     * @var FileManager
-     */
-    protected $fileManager;
-
     /**
      * @var App
      */
@@ -47,8 +39,7 @@ class Renderer
             'context' => $context,
             'internalData' => $internalData,
             'resolvedPaths' => $bundle->getResolvedPaths(),
-            'baseDirectory' => $baseDirectory,
-            'assetUris' => $this->fileManager->getAssetUris($identifier)
+            'baseDirectory' => $baseDirectory
         ]);
     }
 

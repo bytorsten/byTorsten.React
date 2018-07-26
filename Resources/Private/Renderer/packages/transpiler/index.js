@@ -16,7 +16,6 @@ import BabelSyntaxDynamicImport from '@babel/plugin-syntax-dynamic-import';
 import BabelSyntaxImportMeta from '@babel/plugin-syntax-import-meta';
 
 import buildReactHelpers from './helpers';
-import style from './style';
 import flowResource from './flowResource';
 
 export default class Transpiler {
@@ -29,7 +28,6 @@ export default class Transpiler {
     this.aliases = aliases;
     this.resolvedPaths = {};
     this.dependencies = [];
-    this.assets = {};
     this.rpc = rpc;
   }
 
@@ -65,7 +63,6 @@ export default class Transpiler {
           leaveIdsAlone: true,
           files: this.hypotheticalFiles
         }),
-        style(data => this.assets['style.css'] = data),
         babel({
           runtimeHelpers: true,
           exclude: 'node_modules/**',
@@ -92,8 +89,7 @@ export default class Transpiler {
 
     return {
       bundle,
-      resolvedPaths: this.resolvedPaths,
-      assets: this.assets
+      resolvedPaths: this.resolvedPaths
     };
   }
 

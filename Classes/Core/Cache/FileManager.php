@@ -15,7 +15,6 @@ use byTorsten\React\Core\Bundle;
 class FileManager
 {
     const LEGACY_PREFIX = '_legacy_';
-    const ASSET_PREFIX = '_asset_';
     const SERVER_BUNDLE = '[SERVER_BUNDLE]';
     const CLIENT_CODE_FLAG = '[CLIENT_CODE_FLAG]';
     const LEGACY_CLIENT_CODE_FLAG = '[LEGACY_CLIENT_CODE_FLAG]';
@@ -24,7 +23,6 @@ class FileManager
     const SERVER_SCRIPT_PATH = '[SERVER_SCRIPT]';
     const REVISION = '[REVISION]';
     const BUNDLE_META = '[BUNDLE_META]';
-    const ASSET_URIS = '[ASSET_URIS]';
 
     /**
      * @Flow\Inject
@@ -65,30 +63,6 @@ class FileManager
         $this->set($identifier, static::CLIENT_SCRIPT_PATH, $clientScriptPath, $tags);
         $this->set($identifier, static::SERVER_SCRIPT_PATH, $serverScriptPath, $tags);
         $this->set($identifier, static::SERVER_BUNDLE, $bundle, $tags);
-    }
-
-    /**
-     * @param string $identifier
-     * @param Bundle $assetsBundle
-     * @param ControllerContext $controllerContext
-     */
-    public function persistAssets(string $identifier, Bundle $assetsBundle, ControllerContext $controllerContext)
-    {
-        $tags = $this->get($identifier, static::TAGS);
-        $uriBuilder = $controllerContext->getUriBuilder()->reset();
-        $assetUris = [];
-
-        foreach ($assetsBundle->getModules() as $filename => $module) {
-            $this->setAsset($identifier, $filename, $module->getCode(), $tags);
-            $assetUris[$filename] = $uriBuilder->uriFor('asset', ['identifier' => $identifier, 'chunkname' => $filename], 'Chunk', 'byTorsten.React');
-
-            $map = $module->getMap();
-            if ($map !== null) {
-                $this->setAsset($identifier, $filename . '.map', $map, $tags);
-            }
-        }
-
-        $this->set($identifier, static::ASSET_URIS, $assetUris, $tags);
     }
 
     /**
@@ -249,30 +223,6 @@ class FileManager
     /**
      * @param string $identifier
      * @param string $key
-     * @return null|string
-     */
-    public function getAsset(string $identifier, string $key): ?string
-    {
-        return $this->get($identifier, static::ASSET_PREFIX . $key);
-    }
-
-    /**
-     * @param string $identifier
-     * @return array
-     */
-    public function getAssetUris(string $identifier): array
-    {
-        $entryIdentifier = $this->sanitizeIdentifier($identifier.  static::ASSET_URIS);
-        if ($this->cache->has($entryIdentifier)) {
-            return $this->cache->get($entryIdentifier);
-        }
-
-        return [];
-    }
-
-    /**
-     * @param string $identifier
-     * @param string $key
      * @param mixed $content
      * @param array $tags
      */
@@ -293,17 +243,6 @@ class FileManager
     protected function setLegacy(string $identifier, string $key, $content, array $tags)
     {
         $this->set($identifier, static::LEGACY_PREFIX . $key, $content, $tags);
-    }
-
-    /**
-     * @param string $identifier
-     * @param string $key
-     * @param $content
-     * @param array $tags
-     */
-    protected function setAsset(string $identifier, string $key, $content, array $tags)
-    {
-        $this->set($identifier, static::ASSET_PREFIX . $key, $content, $tags);
     }
 
     /**

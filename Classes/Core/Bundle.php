@@ -15,6 +15,13 @@ class Bundle
     protected $resolvedPaths = [];
 
     /**
+     *
+     */
+    protected function __construct()
+    {
+    }
+
+    /**
      * @param array $rawModules
      * @param array $resolvedPaths
      * @return Bundle
@@ -23,12 +30,8 @@ class Bundle
     {
         $bundle = new Bundle();
         $bundle->resolvedPaths = $resolvedPaths;
-        foreach ($rawModules as $filename => $content) {
-            if (is_array($content)) {
-                $bundle->modules[$filename] = Module::create($content['code'], $content['map']);
-            } else if (is_string($content)) {
-                $bundle->modules[$filename] = Module::create($content, null);
-            }
+        foreach ($rawModules as $filename => ['code' => $code, 'map' => $map]) {
+            $bundle->modules[$filename] = Module::create($code, $map);
         }
 
         return $bundle;

@@ -3,13 +3,12 @@ import Processor from '@bytorsten/processor';
 import { nodeModulesPath } from '@bytorsten/helper';
 
 export default class Renderer {
-  constructor({ file, bundle, context = {}, rpc, resolvedPaths = [], baseDirectory, internalData = {}, assetUris = {} }) {
+  constructor({ file, bundle, context = {}, rpc, resolvedPaths = [], baseDirectory, internalData = {} }) {
     this.bundle = bundle;
     this.context = context;
     this.rpc = rpc;
     this.internalData = internalData;
     this.resolvedPaths = resolvedPaths;
-    this.assetUris = assetUris;
     this.file = path.basename(file);
 
     const basedir = baseDirectory || path.dirname(file);
@@ -37,7 +36,7 @@ export default class Renderer {
     const render = await processor.process(this.file);
 
     return {
-      render: () => render({ context: this.context, assets: this.assetUris }),
+      render: () => render({ context: this.context }),
 
       updateRpc: rpc => {
         this.rpc = rpc;

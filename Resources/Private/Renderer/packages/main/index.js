@@ -41,16 +41,16 @@ class App extends Flow {
     const transpiler = new Transpiler({ serverFile, scriptName, clientFile, helpers, hypotheticalFiles, aliases, rpc });
     console.info(`Transpiling identifier "${identifier}"`);
     console.time('transpile');
-    const { bundle, resolvedPaths, assets } = await transpiler.transpile();
+    const { bundle, resolvedPaths } = await transpiler.transpile();
     const dependencies = extractDependencies ? transpiler.getDependencies() : [];
     console.timeEnd('transpile');
 
-    return { bundle, resolvedPaths, dependencies, assets };
+    return { bundle, resolvedPaths, dependencies };
   }
 
-  async render({ identifier, file, bundle, context, internalData, baseDirectory, resolvedPaths, assetUris }, { send }) {
+  async render({ identifier, file, bundle, context, internalData, baseDirectory, resolvedPaths }, { send }) {
     const rpc = request => send('rpc', request);
-    const renderer = new Renderer({ file, bundle, context, rpc, internalData, baseDirectory, resolvedPaths, assetUris });
+    const renderer = new Renderer({ file, bundle, context, rpc, internalData, baseDirectory, resolvedPaths });
     console.info(`Rendering identifier "${identifier}"`);
     console.time('render');
     const unit = await renderer.renderUnit();
