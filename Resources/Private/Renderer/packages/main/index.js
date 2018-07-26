@@ -21,8 +21,8 @@ const options = parseCommandLineArgs([
   { name: 'threads', type: Number }
 ]);
 
-if (!options.socket) {
-  Flow.terminate('Please specify a socket path with the --socket option');
+if (!options.address) {
+  Flow.terminate('Please specify a socket path with the --address option');
 }
 
 process.env.NODE_ENV = options.production ? 'production' : 'development';
