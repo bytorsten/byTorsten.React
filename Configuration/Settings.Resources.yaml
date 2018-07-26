@@ -1,0 +1,13 @@
+Neos:
+  Flow:
+    resource:
+      collections:
+        react:
+          target: 'reactAssetsTarget'
+          storage: 'defaultStaticResourcesStorage' # not used
+      targets:
+        reactAssetsTarget:
+          target: 'Neos\Flow\ResourceManagement\Target\FileSystemSymlinkTarget'
+          targetOptions:
+            path: '%FLOW_PATH_WEB%_Resources/Static/React/'
+            baseUri: '_Resources/Static/React/'

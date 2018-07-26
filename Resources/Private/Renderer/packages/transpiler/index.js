@@ -17,6 +17,7 @@ import BabelSyntaxImportMeta from '@babel/plugin-syntax-import-meta';
 
 import buildReactHelpers from './helpers';
 import flowResource from './flowResource';
+import privateResource from './privateResource';
 
 export default class Transpiler {
 
@@ -57,6 +58,7 @@ export default class Transpiler {
           addDependency: path => this.dependencies.push(path)
         }),
         flowResource({ rpc: this.rpc }),
+        privateResource({ rpc: this.rpc }),
         alias(this.aliases),
         hypothetical({
           allowFallthrough: true,
