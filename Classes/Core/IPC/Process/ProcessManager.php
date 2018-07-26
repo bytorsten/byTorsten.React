@@ -56,7 +56,7 @@ class ProcessManager
         }
 
         /** @var ProcessInterface $process */
-        $process = $this->objectManager->get(ProcessInterface::class, $parameters);
+        $process = $this->objectManager->get(ProcessInterface::class, $identifier, $parameters);
         $process->ready()->then(function () use ($process, $identifier, $parameters) {
 
             $this->cache->set($identifier, [
