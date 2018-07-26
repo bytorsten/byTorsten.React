@@ -17,16 +17,18 @@
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.9.1",
-    "pkg": "Torsten85/pkg#node-v10",
+    "pkg": "Torsten85/pkg#nodev10-fork",
     "rollup": "^0.63.4",
     "rollup-plugin-node-resolve": "^3.3.0"
   },
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "devBundle": "yarn build && node_modules/pkg/lib-es5/bin.js --targets host --options no-warnings,experimental-vm-modules --output bin/react-renderer-macos .",
+    "bundle.dev": "yarn build && node_modules/pkg/lib-es5/bin.js --targets host --options no-warnings,experimental-vm-modules --output bin/react-renderer-macos .",
     "bundle": "yarn build && node_modules/pkg/lib-es5/bin.js --targets node10-linux-x64,node10-macos-x64 --options no-warnings,experimental-vm-modules --out-path bin .",
-    "prepare": "cd node_modules/rollup-plugin-commonjs && yarn install && cd ../pkg && yarn install && chmod +x lib-es5/bin.js"
+    "prepare.pkg": "cd node_modules/pkg && yarn install && chmod +x lib-es5/bin.js",
+    "prepare.commonjs": "cd node_modules/rollup-plugin-commonjs && yarn install",
+    "prepare": "yarn prepare.pkg && yarn.prepare.commonjs"
   },
   "bin": {
     "renderer": "./build/index.js"

@@ -69,6 +69,10 @@ export default class Flow extends EventEmitter {
         }
       }
 
+      cluster.setupMaster({
+        execArgv: []
+      });
+
       process.on('SIGTERM', () => this.stop());
 
       if (this.threads === 1) {
