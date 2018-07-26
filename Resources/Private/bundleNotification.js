@@ -12,7 +12,7 @@
 
     var script = document.createElement('script');
     script.type = 'text/javascript';
-    script.async = true;
+    script.defer = true;
     script.src = scriptUrl;
 
     if (!legacy) {
@@ -30,6 +30,6 @@
         log('React bundle failed to generate, please refresh the page and check your error logs', true);
     };
 
-    document.body.appendChild(script);
+    document.head.appendChild(script);
 }());
 
