@@ -50,23 +50,26 @@ class Transpiler
      * @param string $filename
      * @return Bundle
      */
-    protected function stripClientModule(Bundle $bundle, string $filename): Bundle
+    protected function stripClientModule(Bundle $bundle, ?string $filename): Bundle
     {
-        $bundle->removeModule(basename($filename));
+        if ($filename !== null) {
+            $bundle->removeModule(basename($filename));
+        }
+
         return $bundle;
     }
 
     /**
      * @param string $identifier
      * @param string $serverScript
-     * @param string $clientScript
+     * @param null|string $clientScript
      * @param array $hypotheticalFiles
      * @param array $aliases
      * @param array $additionalDependencies
      * @param BundlerHelper|null $bundleHelper
      * @return ExtendedPromiseInterface
      */
-    public function transpile(string $identifier, string $serverScript, string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = [], BundlerHelper $bundleHelper = null): ExtendedPromiseInterface
+    public function transpile(string $identifier, string $serverScript, ?string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = [], BundlerHelper $bundleHelper = null): ExtendedPromiseInterface
     {
         if ($this->fileManager->hasServerCode($identifier)) {
             $bundle = $this->stripClientModule($this->fileManager->getServerBundle($identifier), $clientScript);

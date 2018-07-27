@@ -44,12 +44,12 @@ class FileManager
 
     /**
      * @param string $identifier
-     * @param string $clientScriptPath
+     * @param null|string $clientScriptPath
      * @param string $serverScriptPath
      * @param Bundle $bundle
      * @param array $dependencies
      */
-    public function persistServerBundle(string $identifier, string $clientScriptPath, string $serverScriptPath, Bundle $bundle, array $dependencies)
+    public function persistServerBundle(string $identifier, ?string $clientScriptPath, string $serverScriptPath, Bundle $bundle, array $dependencies)
     {
         $tags = array_map(function (string $filename) {
             $this->fileMonitor->monitorFile($filename);
