@@ -62,6 +62,11 @@ class ReactView extends AbstractView
     protected $bundleHelper;
 
     /**
+     * @var array
+     */
+    protected $scriptPaths;
+
+    /**
      * @param array $options
      */
     public function __construct(array $options = [])
@@ -143,6 +148,15 @@ class ReactView extends AbstractView
     }
 
     /**
+     * @param string $serverScriptPath
+     * @param string|null $clientScriptPath
+     */
+    public function setScriptPaths(string $serverScriptPath, string $clientScriptPath = null): void
+    {
+        $this->scriptPaths = [$serverScriptPath, $clientScriptPath];
+    }
+
+    /**
      * @param string $key
      * @param mixed $value
      * @return $this|ViewInterface
@@ -159,11 +173,14 @@ class ReactView extends AbstractView
     }
 
     /**
-     * @return mixed
-     * @throws Exception
+     * @return array
      */
-    public function render()
+    protected function resolveScriptPaths(): array
     {
+        if ($this->scriptPaths !== null) {
+            return $this->scriptPaths;
+        }
+
         $filePathResolver = new FilePathResolver();
 
         /** @var ActionRequest $request */
@@ -177,6 +194,17 @@ class ReactView extends AbstractView
 
         $rawClientScript = str_replace('@package', $package->getPackageKey(), $this->getOption('reactClientFilePattern'));
         $clientScript = $filePathResolver->resolveFilePath($rawClientScript);
+
+        return [$serverScript, $clientScript];
+    }
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function render()
+    {
+        [ $serverScript, $clientScript ] = $this->resolveScriptPaths();
 
         $identifier = $this->getOption('identifier') ?: md5($serverScript);
         $this->internalData['identifier'] = $identifier;
