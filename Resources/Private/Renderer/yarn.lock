@@ -2535,9 +2535,9 @@ pkg-fetch@2.5.6:
     semver "5.5.0"
     unique-temp-dir "1.0.0"
 
-pkg@Torsten85/pkg#node-v10:
+pkg@Torsten85/pkg#nodev10-fork:
   version "4.3.3"
-  resolved "https://codeload.github.com/Torsten85/pkg/tar.gz/ea386c2ad32712175c5b7e01d7270a9f87667526"
+  resolved "https://codeload.github.com/Torsten85/pkg/tar.gz/cd6d675534ae58434051f788f2c2de08d9796199"
   dependencies:
     "@babel/parser" "7.0.0-beta.51"
     babel-runtime "6.26.0"
