@@ -1,7 +1,14 @@
 {
-    "description": "renders react templates (and much more)",
+    "description": "renders react components (and much more)",
     "type": "neos-react",
     "name": "bytorsten/react",
+    "authors": [
+        {
+            "name": "Torsten Blindert",
+            "email": "info@by-torsten.com"
+        }
+    ],
+    "license": "MIT",
     "require": {
         "neos/flow": "~5.0.0",
         "react/socket": "^0.8.12",
