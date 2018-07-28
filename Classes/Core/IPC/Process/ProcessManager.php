@@ -46,12 +46,14 @@ class ProcessManager
 
         if ($this->cache->has($identifier)) {
             ['pid' => $pid, 'pipePaths' => $pipePaths, 'address' => $address] = $this->cache->get($identifier);
+            /** @var ProxyProcessInterface $proxyProcess */
+            $proxyProcess = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $address);
 
-            if (posix_getpgid($pid) !== false) {
-                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $address);
-                return $process;
+            if ($proxyProcess->isAlive() === true) {
+                return $proxyProcess;
             }
 
+            $proxyProcess->stop();
             $this->cache->remove($identifier);
         }
 
@@ -105,13 +107,14 @@ class ProcessManager
         $count = 0;
         $processInfos = $this->cache->getByTag('process');
         foreach ($processInfos as ['identifier' => $identifier, 'pid' => $pid, 'pipePaths' => $pipePaths, 'address' => $address]) {
-            if (posix_getpgid($pid) !== false) {
-                $count ++;
-                /** @var ProcessInterface $process */
-                $process = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $address);
-                $process->stop($force);
+            /** @var ProxyProcessInterface $proxyProcess */
+            $proxyProcess = $this->objectManager->get(ProxyProcessInterface::class, $pid, $pipePaths, $address);
+
+            if ($proxyProcess->isAlive()) {
+                $count++;
             }
 
+            $proxyProcess->stop($force);
             $this->cache->remove($identifier);
         }
 
