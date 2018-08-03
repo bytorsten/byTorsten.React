@@ -1,6 +1,4 @@
 (function () {
-    var legacy = JSON.parse('%LEGACY%');
-
     var scriptUrl = '%SCRIPT_URL%';
     var identifier = '%IDENTIFIER%';
 
@@ -14,11 +12,6 @@
     script.type = 'text/javascript';
     script.defer = true;
     script.src = scriptUrl;
-
-    if (!legacy) {
-        script.type = 'module';
-    }
-
 
     var start = Date.now();
     script.onload = function () {

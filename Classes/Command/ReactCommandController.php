@@ -109,10 +109,6 @@ class ReactCommandController extends CommandController
         $bundler->bundle($identifier);
         $this->outputLine('<success>done</success>');
 
-        $this->output('Bundling legacy... ');
-        $bundler->bundle($identifier, true);
-        $this->outputLine('<success>done</success>');
-
         $this->outputLine();
         $elapsed = round(microtime(true) - $start, 2);
         $this->outputLine('Bundled <success>%s</success> in <success>%s seconds</success>.', [$package->getPackageKey(), $elapsed]);

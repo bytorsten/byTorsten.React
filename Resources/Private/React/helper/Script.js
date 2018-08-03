@@ -24,13 +24,7 @@ const Script = ({ internalDataKey }) => {
 
       <Uri forceFetch action="index" controller="chunk" package="bytorsten.react" arguments={{ identifier, chunkname }}>
         {({ data }) => (
-          <script defer type="module" src={data} />
-        )}
-      </Uri>
-
-      <Uri forceFetch action="legacy" controller="chunk" package="bytorsten.react" arguments={{ identifier, chunkname }}>
-        {({ data }) => (
-          <script defer noModule src={data} />
+          <script defer src={data} />
         )}
       </Uri>
     </Fragment>

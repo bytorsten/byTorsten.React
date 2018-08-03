@@ -11,18 +11,6 @@
       toLowerCase: false
 
 -
-  name: 'Legacy Chunk'
-  uriPattern: 'chunk/legacy/{identifier}/{chunkname}'
-  defaults:
-    '@action': 'legacy'
-    '@package': 'byTorsten.React'
-    '@controller': 'Chunk'
-  appendExceedingArguments: true
-  routeParts:
-      chunkname:
-        toLowerCase: false
-
--
   name: 'RPC'
   uriPattern: 'rpc'
   defaults:

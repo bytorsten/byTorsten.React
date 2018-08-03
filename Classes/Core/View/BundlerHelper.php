@@ -8,6 +8,10 @@ class BundlerHelper
      */
     protected $aliases = [];
 
+    /**
+     * @var array
+     */
+    protected $externals = [];
 
     /**
      * @var array
@@ -51,6 +55,15 @@ class BundlerHelper
     }
 
     /**
+     * @param string $name
+     * @param string $external
+     */
+    public function addExternal(string $name, string $external)
+    {
+        $this->externals[$name] = $external;
+    }
+
+    /**
      * @param bool $showBundleNotification
      */
     public function showBundleNotification(bool $showBundleNotification): void
@@ -64,6 +77,14 @@ class BundlerHelper
     public function getAliases(): array
     {
         return $this->aliases;
+    }
+
+    /**
+     * @return array
+     */
+    public function getExternals(): array
+    {
+        return $this->externals;
     }
 
     /**

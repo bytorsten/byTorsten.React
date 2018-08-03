@@ -43,30 +43,6 @@ class Bundler
     }
 
     /**
-     * @param string $identifier
-     * @param Bundle $bundle
-     * @param bool $legacy
-     * @return Bundle
-     */
-    public function addSourceMapUrls(string $identifier, Bundle $bundle, bool $legacy): Bundle
-    {
-        if ($this->environment->getContext()->isProduction()) {
-            return $bundle;
-        }
-
-        $dummyUri = $this->controllerContext->getUriBuilder()->uriFor($legacy ? 'legacy' : 'index', ['identifier' => $identifier, 'chunkname' => '__filename__.map'], 'Chunk', 'byTorsten.React');
-
-        foreach ($bundle->getModules() as $filename => $module) {
-            if ($module->getMap() !== null) {
-                $sourceMapUrl = str_replace('__filename__', $filename, $dummyUri);
-                $module->appendCode(sprintf('//# sourceMappingURL=%s', $sourceMapUrl) . PHP_EOL);
-            }
-        }
-
-        return $bundle;
-    }
-
-    /**
      * @param Bundle $bundle
      * @param string $filename
      * @return Bundle
@@ -79,11 +55,10 @@ class Bundler
 
     /**
      * @param string $identifier
-     * @param bool $legacy
      * @return Bundle
      * @throws BundlingException
      */
-    public function bundle(string $identifier, bool $legacy = false)
+    public function bundle(string $identifier)
     {
         $clientScriptPath = $this->fileManager->getClientScriptPath($identifier);
         $serverBundle = $this->fileManager->getServerBundle($identifier);
@@ -95,7 +70,7 @@ class Bundler
         $clientBundle = null;
 
         $unit = new Unit($this->controllerContext);
-        $unit->work(function (App $app) use ($clientScriptPath, $baseBundle, $identifier, $legacy, $meta, &$clientBundle) {
+        $unit->work(function (App $app) use ($clientScriptPath, $baseBundle, $identifier, $meta, &$clientBundle) {
             $app->call('bundle', [
                 'identifier' => $identifier,
                 'chunkPath' => $identifier,
@@ -104,15 +79,10 @@ class Bundler
                 'baseDirectory' => $meta->getBaseDirectory(),
                 'hypotheticalFiles' => $meta->getHypotheticalFiles(),
                 'aliases' => array_merge($meta->getAliases(), $baseBundle->getResolvedPaths()),
-                'legacy' => $legacy
-            ])->done(function (array $bundleResult) use ($app, $identifier, $legacy, &$clientBundle) {
-                $clientBundle = $this->addSourceMapUrls($identifier, Bundle::create($bundleResult), $legacy);
-
-                if ($legacy === true) {
-                    $this->fileManager->persistLegacyClientBundle($identifier, $clientBundle);
-                } else {
-                    $this->fileManager->persistClientBundle($identifier, $clientBundle);
-                }
+                'externals' => $meta->getExternals()
+            ])->done(function (array $bundleResult) use ($app, $identifier, &$clientBundle) {
+                $clientBundle = Bundle::create($bundleResult);
+                $this->fileManager->persistClientBundle($identifier, $clientBundle);
 
                 $app->end();
             });

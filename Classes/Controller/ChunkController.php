@@ -24,12 +24,11 @@ class ChunkController extends ActionController
     /**
      * @param string $identifier
      * @param string $chunkname
-     * @param bool $legacy
      * @return string
      */
-    protected function renderBundleNotification(string $identifier, string $chunkname, bool $legacy = false): string
+    protected function renderBundleNotification(string $identifier, string $chunkname): string
     {
-        $scriptUrl = $this->uriBuilder->uriFor($legacy ? 'legacy' : 'index', [
+        $scriptUrl = $this->uriBuilder->uriFor('index', [
             'identifier' => $identifier,
             'chunkname' => $chunkname,
             'build' => true
@@ -47,8 +46,8 @@ class ChunkController extends ActionController
         $template = file_get_contents($this->bundleNotificationPath);
 
         return str_replace(
-            ['%SCRIPT_URL%', '%LEGACY%', '%IDENTIFIER%'],
-            [$scriptUrl, $legacy ? 'true' : 'false', $identifier],
+            ['%SCRIPT_URL%', '%IDENTIFIER%'],
+            [$scriptUrl, $identifier],
             $template
         );
     }
@@ -81,7 +80,7 @@ class ChunkController extends ActionController
      */
     public function indexAction(string $identifier, string $chunkname, bool $build = false): string
     {
-        $this->compareETag($identifier);
+        //$this->compareETag($identifier);
         $this->response->setHeader('Content-Type', 'text/javascript');
 
         $content = $this->fileManager->get($identifier, $chunkname);
@@ -98,40 +97,6 @@ class ChunkController extends ActionController
                 }
 
                 return $this->renderBundleNotification($identifier, $chunkname);
-            }
-        }
-
-        if ($content === null) {
-            $this->response->setStatus(404);
-            throw new StopActionException();
-        }
-
-        return $content;
-    }
-
-    /**
-     * @param string $identifier
-     * @param string $chunkname
-     * @param bool $build
-     * @return string
-     * @throws StopActionException
-     */
-    public function legacyAction(string $identifier, string $chunkname, bool $build = false): string
-    {
-        $this->compareETag($identifier);
-        $this->response->setHeader('Content-Type', 'text/javascript');
-
-        $content = $this->fileManager->getLegacy($identifier, $chunkname);
-
-        if ($content === null) {
-            if ($this->fileManager->hasServerCode($identifier) === true && $this->fileManager->hasLegacyClientCode($identifier) === false) {
-                if ($build === true) {
-                    $bundler = new Bundler($this->controllerContext);
-                    $legacyClientBundle = $bundler->bundle($identifier, true);
-                    return $legacyClientBundle->getModule($chunkname)->getCode();
-                }
-
-                return $this->renderBundleNotification($identifier, $chunkname, true);
             }
         }
 

@@ -3,7 +3,6 @@ namespace byTorsten\React\Core\Cache;
 
 use Neos\Flow\Annotations as Flow;
 use Neos\Cache\Frontend\FrontendInterface;
-use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Utility\Environment;
 use byTorsten\React\Core\View\BundlerHelper;
@@ -14,10 +13,8 @@ use byTorsten\React\Core\Bundle;
  */
 class FileManager
 {
-    const LEGACY_PREFIX = '_legacy_';
     const SERVER_BUNDLE = '[SERVER_BUNDLE]';
     const CLIENT_CODE_FLAG = '[CLIENT_CODE_FLAG]';
-    const LEGACY_CLIENT_CODE_FLAG = '[LEGACY_CLIENT_CODE_FLAG]';
     const TAGS = '[TAGS]';
     const CLIENT_SCRIPT_PATH = '[CLIENT_SCRIPT]';
     const SERVER_SCRIPT_PATH = '[SERVER_SCRIPT]';
@@ -96,25 +93,6 @@ class FileManager
 
     /**
      * @param string $identifier
-     * @param Bundle $bundle
-     */
-    public function persistLegacyClientBundle(string $identifier, Bundle $bundle)
-    {
-        $tags = $this->get($identifier, static::TAGS);
-        $this->set($identifier, static::LEGACY_CLIENT_CODE_FLAG, true, $tags);
-
-        foreach ($bundle->getModules() as $filename => $module) {
-            $this->setLegacy($identifier, $filename, $module->getCode(), $tags);
-
-            $map = $module->getMap();
-            if ($map !== null) {
-                $this->setLegacy($identifier, $filename . '.map', $module->getMap(), $tags);
-            }
-        }
-    }
-
-    /**
-     * @param string $identifier
      * @return BundlerHelper
      */
     public function getBundleMeta(string $identifier): BundlerHelper
@@ -178,15 +156,6 @@ class FileManager
 
     /**
      * @param string $identifier
-     * @return bool
-     */
-    public function hasLegacyClientCode(string $identifier): bool
-    {
-        return $this->hasFlag($identifier, static::LEGACY_CLIENT_CODE_FLAG);
-    }
-
-    /**
-     * @param string $identifier
      * @return string
      */
     protected function sanitizeIdentifier(string $identifier): string
@@ -213,16 +182,6 @@ class FileManager
     /**
      * @param string $identifier
      * @param string $key
-     * @return null|string
-     */
-    public function getLegacy(string $identifier, string $key): ?string
-    {
-        return $this->get($identifier, static::LEGACY_PREFIX . $key);
-    }
-
-    /**
-     * @param string $identifier
-     * @param string $key
      * @param mixed $content
      * @param array $tags
      */
@@ -232,17 +191,6 @@ class FileManager
             $entryIdentifier = $this->sanitizeIdentifier($identifier . $key);
             $this->cache->set($entryIdentifier, $content, $tags);
         }
-    }
-
-    /**
-     * @param string $identifier
-     * @param string $key
-     * @param $content
-     * @param array $tags
-     */
-    protected function setLegacy(string $identifier, string $key, $content, array $tags)
-    {
-        $this->set($identifier, static::LEGACY_PREFIX . $key, $content, $tags);
     }
 
     /**
