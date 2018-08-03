@@ -80,6 +80,7 @@ class Transpiler
             'identifier' => $identifier,
             'serverFile' => $serverScript,
             'clientFile' => $clientScript,
+            'baseDirectory' => $bundleHelper !== null ? $bundleHelper->getBaseDirectory() : null,
             'helpers' => $this->reactHelperManager->generateHelperInfos(),
             'extractDependencies' => $this->environment->getContext()->isDevelopment(),
             'hypotheticalFiles' => $hypotheticalFiles,

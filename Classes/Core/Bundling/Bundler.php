@@ -55,6 +55,18 @@ class Bundler
 
     /**
      * @param string $identifier
+     * @return string
+     */
+    protected function getPublicPath(string $identifier): string
+    {
+        $uriBuilder = $this->controllerContext->getUriBuilder();
+        $dummyUri = $uriBuilder->uriFor('index', ['identifier' => $identifier, 'chunkname' => 'dummy.tmp'], 'Chunk', 'byTorsten.React');
+        $pathInfo = pathinfo($dummyUri);
+        return rtrim($pathInfo['dirname'], '/') . '/';
+    }
+
+    /**
+     * @param string $identifier
      * @return Bundle
      * @throws BundlingException
      */
@@ -73,7 +85,7 @@ class Bundler
         $unit->work(function (App $app) use ($clientScriptPath, $baseBundle, $identifier, $meta, &$clientBundle) {
             $app->call('bundle', [
                 'identifier' => $identifier,
-                'chunkPath' => $identifier,
+                'publicPath' => $this->getPublicPath($identifier),
                 'file' => $clientScriptPath,
                 'baseBundle' => $baseBundle->toArray(),
                 'baseDirectory' => $meta->getBaseDirectory(),
