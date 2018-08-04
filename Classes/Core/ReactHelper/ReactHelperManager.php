@@ -58,7 +58,16 @@ class ReactHelperManager
             $arguments[] = $data[$parameterName] ?? $parameterConfiguration['defaultValue'];
         }
 
-        return call_user_func_array([$helper, 'evaluate'], $arguments);
+        try {
+            return ['data' => call_user_func_array([$helper, 'evaluate'], $arguments)];
+        } catch (\Throwable $throwable) {
+            return [
+                'error' => [
+                    'message' => $throwable->getMessage(),
+                    'stack' => $throwable->getTraceAsString()
+                ]
+            ];
+        }
     }
 
     /**

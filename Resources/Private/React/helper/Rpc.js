@@ -3,6 +3,17 @@ import { bool, func, string, object, instanceOf } from 'prop-types';
 
 import { FlowConsumer, FlowClient } from './Flow';
 
+const formatResponse = response => {
+  const { data, error: rawError } = response;
+  let error = null;
+  if (rawError) {
+    error = new Error(rawError.message);
+    error.stack = rawError.stack;
+  }
+
+  return { data, error };
+};
+
 class Rpc extends Component {
 
   static propTypes = {
@@ -30,6 +41,7 @@ class Rpc extends Component {
     if (nextKey !== prevState.key) {
       return {
         data: null,
+        error: null,
         key: nextKey,
         loading: true,
         shouldFetch: true
@@ -43,7 +55,8 @@ class Rpc extends Component {
     key: null,
     loading: false,
     shouldFetch: false,
-    data: null
+    data: null,
+    error: null
   }
 
   componentDidMount() {
@@ -56,7 +69,7 @@ class Rpc extends Component {
 
   async fetchEndpoint() {
     const { shouldFetch } = this.state;
-    
+
     if (!shouldFetch) {
       return;
     }
@@ -64,8 +77,8 @@ class Rpc extends Component {
     const { helper, variables, client, forceFetch } = this.props;
     this.setState({ shouldFetch: false });
 
-    const data = await client.fetch({ helper, variables, cache: !forceFetch });
-    this.setState({ data, loading: false });
+    const response = await client.fetch({ helper, variables, cache: !forceFetch });
+    this.setState({ ...formatResponse(response), loading: false });
   }
 
   fetchData() {
@@ -77,12 +90,16 @@ class Rpc extends Component {
     const { children, helper, variables, client } = this.props;
 
     if (process.env.SSR) {
-      const data = client.get({ helper, variables });
-      return children({ data, loading: !data });
+      const response = client.get({ helper, variables });
+      if (!response) {
+        return children({ data: null, error: null, loading: true });
+      }
+
+      return children({ ...formatResponse(response), loading: false });
     }
 
-    const { data, loading } = this.state;
-    return children({ data, loading });
+    const { data, error, loading } = this.state;
+    return children({ data, error, loading });
   }
 }
 
