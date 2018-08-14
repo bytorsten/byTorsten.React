@@ -23,42 +23,16 @@ class ChunkController extends ActionController
 
     /**
      * @param string $identifier
-     * @param string $chunkname
-     * @return string
-     */
-    protected function renderBundleNotification(string $identifier, string $chunkname): string
-    {
-        $scriptUrl = $this->uriBuilder->uriFor('index', [
-            'identifier' => $identifier,
-            'chunkname' => $chunkname,
-            'build' => true
-        ]);
-
-        if ($this->bundleNotificationPath === false) {
-            $this->redirectToUri($scriptUrl);
-        }
-
-        $this->response->getHeaders()->remove('ETag');
-        $this->response->setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        $this->response->setHeader('Pragma', 'no-cache');
-        $this->response->setHeader('Expires', '0');
-
-        $template = file_get_contents($this->bundleNotificationPath);
-
-        return str_replace(
-            ['%SCRIPT_URL%', '%IDENTIFIER%'],
-            [$scriptUrl, $identifier],
-            $template
-        );
-    }
-
-    /**
-     * @param string $identifier
      * @throws StopActionException
      */
     protected function compareETag(string $identifier)
     {
-        $serverETag = 'W/' . $this->fileManager->getRevision($identifier);
+        $revision = $this->fileManager->getRevision($identifier);
+        if ($revision === null) {
+            return;
+        }
+
+        $serverETag = 'W/' . $revision;
         $httpRequest = $this->request->getHttpRequest();
         if ($httpRequest->hasHeader('If-None-Match')) {
             $clientETag = $httpRequest->getHeader('If-None-Match');
@@ -74,29 +48,22 @@ class ChunkController extends ActionController
     /**
      * @param string $identifier
      * @param string $chunkname
-     * @param bool $build
      * @return string
      * @throws StopActionException
      */
-    public function indexAction(string $identifier, string $chunkname, bool $build = false): string
+    public function indexAction(string $identifier, string $chunkname): string
     {
-        //$this->compareETag($identifier);
+        $this->compareETag($identifier);
         $this->response->setHeader('Content-Type', 'text/javascript');
 
         $content = $this->fileManager->get($identifier, $chunkname);
 
         if ($content === null) {
             if ($this->fileManager->hasServerCode($identifier) === true && $this->fileManager->hasClientCode($identifier) === false) {
-                $shouldShowBundleNotification = $this->fileManager->getBundleMeta($identifier)->shouldShowBundleNotification();
+                $bundler = new Bundler($this->controllerContext);
+                $clientBundle = $bundler->bundle($identifier);
 
-                if ($build === true || $shouldShowBundleNotification === false) {
-                    $bundler = new Bundler($this->controllerContext);
-                    $clientBundle = $bundler->bundle($identifier);
-
-                    return $clientBundle->getModule($chunkname)->getCode();
-                }
-
-                return $this->renderBundleNotification($identifier, $chunkname);
+                return $clientBundle->getModule($chunkname)->getCode();
             }
         }
 

@@ -1,6 +1,7 @@
 <?php
 namespace byTorsten\React\Core\Transpiling;
 
+use byTorsten\React\Core\View\ViewConfiguration;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Utility\Environment;
 use React\Promise\ExtendedPromiseInterface;
@@ -9,7 +10,6 @@ use byTorsten\React\Core\Cache\FileManager;
 use byTorsten\React\Core\ReactHelper\ReactHelperManager;
 use byTorsten\React\Core\IPC\App;
 use byTorsten\React\Core\Bundle;
-use byTorsten\React\Core\View\BundlerHelper;
 
 class Transpiler
 {
@@ -46,57 +46,42 @@ class Transpiler
     }
 
     /**
-     * @param Bundle $bundle
-     * @param string $filename
-     * @return Bundle
+     * @param string $identifier
+     * @return string
      */
-    protected function stripClientModule(Bundle $bundle, ?string $filename): Bundle
+    protected function getPublicPath(string $identifier): string
     {
-        if ($filename !== null) {
-            $bundle->removeModule(basename($filename));
-        }
-
-        return $bundle;
+        $uriBuilder = $this->app->getControllerContext()->getUriBuilder();
+        $dummyUri = $uriBuilder->uriFor('index', ['identifier' => $identifier, 'chunkname' => 'dummy.tmp'], 'Chunk', 'byTorsten.React');
+        $pathInfo = pathinfo($dummyUri);
+        return rtrim($pathInfo['dirname'], '/') . '/';
     }
 
     /**
-     * @param string $identifier
-     * @param string $serverScript
-     * @param null|string $clientScript
-     * @param array $hypotheticalFiles
-     * @param array $aliases
-     * @param array $additionalDependencies
-     * @param BundlerHelper|null $bundleHelper
+     * @param ViewConfiguration $configuration
      * @return ExtendedPromiseInterface
      */
-    public function transpile(string $identifier, string $serverScript, ?string $clientScript, array $hypotheticalFiles = [], array $aliases = [], array $additionalDependencies = [], BundlerHelper $bundleHelper = null): ExtendedPromiseInterface
+    public function transpile(ViewConfiguration $configuration): ExtendedPromiseInterface
     {
+        $identifier = $configuration->getIdentifier();
+
         if ($this->fileManager->hasServerCode($identifier)) {
-            $bundle = $this->stripClientModule($this->fileManager->getServerBundle($identifier), $clientScript);
-            return new FulfilledPromise($bundle);
+            return new FulfilledPromise($this->fileManager->getServerBundle($identifier));
         }
 
-        return $this->app->call('transpile', [
-            'identifier' => $identifier,
-            'serverFile' => $serverScript,
-            'clientFile' => $clientScript,
-            'baseDirectory' => $bundleHelper !== null ? $bundleHelper->getBaseDirectory() : null,
-            'helpers' => $this->reactHelperManager->generateHelperInfos(),
-            'extractDependencies' => $this->environment->getContext()->isDevelopment(),
-            'hypotheticalFiles' => $hypotheticalFiles,
-            'aliases' => $aliases
-        ])->then(function (array $transpileResult) use ($identifier, $serverScript, $clientScript, $additionalDependencies, $bundleHelper) {
-            ['bundle' => $rawBundle, 'dependencies' => $dependencies, 'resolvedPaths' => $resolvedPaths] = $transpileResult;
+        $configuration->setHelperInfos($this->reactHelperManager->generateHelperInfos());
+        $configuration->setPublicPath($this->getPublicPath($identifier));
 
-            $allDependencies = array_merge($dependencies, $additionalDependencies);
-            $bundle = Bundle::create($rawBundle, $resolvedPaths);
+        $transpileConfiguration = $configuration->toArray();
+        $transpileConfiguration['extractDependencies'] = $this->environment->getContext()->isDevelopment();
+        $transpileConfiguration['prepareClientBundle'] = $this->app->willSurvive();
 
-            $this->fileManager->persistServerBundle($identifier, $clientScript, $serverScript, $bundle, $allDependencies);
-            if ($bundleHelper !== null) {
-                $this->fileManager->persistBundleMeta($identifier, $bundleHelper);
-            }
+        return $this->app->call('transpile', $transpileConfiguration)->then(function (array $transpileResult) use ($identifier, $configuration) {
+            ['bundle' => $rawBundle, 'dependencies' => $dependencies] = $transpileResult;
+            $bundle = Bundle::create($rawBundle);
+            $this->fileManager->persistServerBundle($identifier, $bundle, $dependencies, $configuration);
 
-            return $this->stripClientModule($bundle, $clientScript);
+            return $bundle;
         });
     }
 }

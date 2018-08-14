@@ -1,6 +1,7 @@
 <?php
 namespace byTorsten\React\Core\Bundling;
 
+use byTorsten\React\Core\ReactHelper\ReactHelperManager;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Flow\Utility\Environment;
@@ -30,6 +31,12 @@ class Bundler
     protected $fileManager;
 
     /**
+     * @Flow\Inject
+     * @var ReactHelperManager
+     */
+    protected $reactHelperManager;
+
+    /**
      * @var ControllerContext
      */
     protected $controllerContext;
@@ -43,59 +50,22 @@ class Bundler
     }
 
     /**
-     * @param Bundle $bundle
-     * @param string $filename
-     * @return Bundle
-     */
-    protected function stripServerModule(Bundle $bundle, string $filename): Bundle
-    {
-        $bundle->removeModule(basename($filename));
-        return $bundle;
-    }
-
-    /**
-     * @param string $identifier
-     * @return string
-     */
-    protected function getPublicPath(string $identifier): string
-    {
-        $uriBuilder = $this->controllerContext->getUriBuilder();
-        $dummyUri = $uriBuilder->uriFor('index', ['identifier' => $identifier, 'chunkname' => 'dummy.tmp'], 'Chunk', 'byTorsten.React');
-        $pathInfo = pathinfo($dummyUri);
-        return rtrim($pathInfo['dirname'], '/') . '/';
-    }
-
-    /**
      * @param string $identifier
      * @return Bundle
      * @throws BundlingException
      */
     public function bundle(string $identifier)
     {
-        $clientScriptPath = $this->fileManager->getClientScriptPath($identifier);
-        $serverBundle = $this->fileManager->getServerBundle($identifier);
-        $meta = $this->fileManager->getBundleMeta($identifier);
-
-        $baseBundle = $this->stripServerModule($serverBundle, $this->fileManager->getServerScriptPath($identifier));
+        $configuration = $this->fileManager->getConfiguration($identifier);
 
         /** @var Bundle $clientBundle */
         $clientBundle = null;
 
         $unit = new Unit($this->controllerContext);
-        $unit->work(function (App $app) use ($clientScriptPath, $baseBundle, $identifier, $meta, &$clientBundle) {
-            $app->call('bundle', [
-                'identifier' => $identifier,
-                'publicPath' => $this->getPublicPath($identifier),
-                'file' => $clientScriptPath,
-                'baseBundle' => $baseBundle->toArray(),
-                'baseDirectory' => $meta->getBaseDirectory(),
-                'hypotheticalFiles' => $meta->getHypotheticalFiles(),
-                'aliases' => array_merge($meta->getAliases(), $baseBundle->getResolvedPaths()),
-                'externals' => $meta->getExternals()
-            ])->done(function (array $bundleResult) use ($app, $identifier, &$clientBundle) {
+        $unit->work(function (App $app) use ($configuration, &$clientBundle) {
+            $app->call('bundle', $configuration->toArray())->done(function (array $bundleResult) use ($app, $configuration, &$clientBundle) {
                 $clientBundle = Bundle::create($bundleResult);
-                $this->fileManager->persistClientBundle($identifier, $clientBundle);
-
+                $this->fileManager->persistClientBundle($configuration->getIdentifier(), $clientBundle);
                 $app->end();
             });
         });

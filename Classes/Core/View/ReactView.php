@@ -1,7 +1,6 @@
 <?php
 namespace byTorsten\React\Core\View;
 
-use byTorsten\React\Core\Cache\FileManager;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Exception;
 use Neos\Flow\Mvc\ActionRequest;
@@ -12,6 +11,7 @@ use Neos\Flow\Package;
 use Neos\Flow\Package\PackageManagerInterface;
 use Neos\Utility\TypeHandling;
 use React\Promise\Deferred;
+use byTorsten\React\Core\Cache\FileManager;
 use byTorsten\React\Core\Bundle;
 use byTorsten\React\Core\IPC\App;
 use byTorsten\React\Core\IPC\Unit;
@@ -21,12 +21,16 @@ use byTorsten\React\Core\Transpiling\Transpiler;
 
 class ReactView extends AbstractView
 {
+    const SERVER_FILE_PATTERN = 'resource://@package/Private/React/index.server.js';
+    const CLIENT_FILE_PATTERN = 'resource://@package/Private/React/index.client.js';
+    const MISSING = '__missing__';
+
     /**
      * @var array
      */
     protected $supportedOptions = [
-        'reactServerFilePattern' => ['resource://@package/Private/React/index.server.js', 'JS file responsible for server side rendering', 'string'],
-        'reactClientFilePattern' => ['resource://@package/Private/React/index.client.js', 'JS file responsible for client side rendering', 'string'],
+        'serverFile' => [self::MISSING, 'JS file responsible for server side rendering', 'string'],
+        'clientFile' => [self::MISSING, 'JS file responsible for client side rendering', 'string'],
         'identifier' => [null, 'Unique identifier for creating the client bundle. If not given, is automatically derived from the server file path.', 'string']
     ];
 
@@ -37,42 +41,25 @@ class ReactView extends AbstractView
     protected $packageManager;
 
     /**
-     * @var array
+     * @Flow\Inject
+     * @var FileManager
      */
-    protected $internalData = [];
+    protected $fileManager;
 
     /**
      * @var array
      */
-    protected $hypotheticalFiles = [];
+    protected $filePaths;
 
     /**
-     * @var array
+     * @var ViewConfiguration
      */
-    protected $aliases = [];
+    protected $configuration;
 
-    /**
-     * @var array
-     */
-    protected $additionalDependencies = [];
-
-    /**
-     * @var BundlerHelper
-     */
-    protected $bundleHelper;
-
-    /**
-     * @var array
-     */
-    protected $scriptPaths;
-
-    /**
-     * @param array $options
-     */
     public function __construct(array $options = [])
     {
         parent::__construct($options);
-        $this->bundleHelper = new BundlerHelper();
+        $this->configuration = new ViewConfiguration();
     }
 
     /**
@@ -85,12 +72,12 @@ class ReactView extends AbstractView
 
         /** @var ActionRequest $request */
         $request = $this->controllerContext->getRequest();
-        $this->internalData['controllerContext'] = [
+        $this->configuration->addInternalData('controllerContext', [
             'packageKey' => $request->getControllerPackageKey(),
             'subpackageKey' => $request->getControllerSubpackageKey(),
             'controllerName' => $request->getControllerName(),
             'actionName' => $request->getControllerActionName()
-        ];
+        ]);
     }
 
     /**
@@ -99,7 +86,7 @@ class ReactView extends AbstractView
      */
     public function addHypotheticalFile(string $path, string $code)
     {
-        $this->hypotheticalFiles[$path] = $code;
+        $this->configuration->addHypotheticalFile($path, $code);
     }
 
     /**
@@ -108,7 +95,7 @@ class ReactView extends AbstractView
      */
     public function addAlias(string $name, string $path)
     {
-        $this->aliases[$name] = $path;
+        $this->configuration->addAlias($name, $path);
     }
 
     /**
@@ -119,41 +106,7 @@ class ReactView extends AbstractView
      */
     public function addAdditionalDependency(string $path)
     {
-        $this->additionalDependencies[] = $path;
-    }
-
-    /**
-     * @return string
-     */
-    public function getScriptName(): string
-    {
-        return basename($this->getOption('reactClientFilePattern'));
-    }
-
-    /**
-     * @return BundlerHelper
-     */
-    public function client(): BundlerHelper
-    {
-        return $this->bundleHelper;
-    }
-
-    /**
-     * @param string $baseDirectory
-     */
-    public function setBaseDirectory(string $baseDirectory): void
-    {
-        $filePathResolver = new FilePathResolver();
-        $this->bundleHelper->setBaseDirectory($filePathResolver->resolveFilePath($baseDirectory));
-    }
-
-    /**
-     * @param string $serverScriptPath
-     * @param string|null $clientScriptPath
-     */
-    public function setScriptPaths(string $serverScriptPath, string $clientScriptPath = null): void
-    {
-        $this->scriptPaths = [$serverScriptPath, $clientScriptPath];
+        $this->configuration->addAdditionalDependency($path);
     }
 
     /**
@@ -175,27 +128,38 @@ class ReactView extends AbstractView
     /**
      * @return array
      */
-    protected function resolveScriptPaths(): array
+    protected function resolveFilePaths(): array
     {
-        if ($this->scriptPaths !== null) {
-            return $this->scriptPaths;
+        if ($this->filePaths !== null) {
+            return $this->filePaths;
+        }
+
+        $rawServerFile = $this->options['serverFile'];
+        $rawClientFile = $this->options['clientFile'];
+
+        if ($rawServerFile === self::MISSING || $rawClientFile === self::MISSING) {
+
+            /** @var ActionRequest $request */
+            $request = $this->controllerContext->getRequest();
+
+            /** @var Package $package */
+            $package = $this->packageManager->getPackage($request->getControllerPackageKey());
+
+            if ($rawServerFile === self::MISSING) {
+                $rawServerFile = str_replace('@package', $package->getPackageKey(), self::SERVER_FILE_PATTERN);
+            }
+
+            if ($rawClientFile === self::MISSING) {
+                $rawClientFile = str_replace('@package', $package->getPackageKey(), self::CLIENT_FILE_PATTERN);
+            }
         }
 
         $filePathResolver = new FilePathResolver();
 
-        /** @var ActionRequest $request */
-        $request = $this->controllerContext->getRequest();
+        $clientFile = $filePathResolver->resolveFilePath($rawClientFile);
+        $serverFile = $filePathResolver->resolveFilePath($rawServerFile);
 
-        /** @var Package $package */
-        $package = $this->packageManager->getPackage($request->getControllerPackageKey());
-
-        $rawServerScript = str_replace('@package', $package->getPackageKey(), $this->getOption('reactServerFilePattern'));
-        $serverScript = $filePathResolver->resolveFilePath($rawServerScript);
-
-        $rawClientScript = str_replace('@package', $package->getPackageKey(), $this->getOption('reactClientFilePattern'));
-        $clientScript = $filePathResolver->resolveFilePath($rawClientScript);
-
-        return [$serverScript, $clientScript];
+        return $this->filePaths = [$serverFile, $clientFile];
     }
 
     /**
@@ -204,26 +168,24 @@ class ReactView extends AbstractView
      */
     public function render()
     {
-        [ $serverScript, $clientScript ] = $this->resolveScriptPaths();
+        [ $serverFile, $clientFile ] = $this->resolveFilePaths();
 
-        $identifier = $this->getOption('identifier') ?: md5($serverScript);
-        $this->internalData['identifier'] = $identifier;
-        $this->internalData['clientChunkName'] = $this->getScriptName();
+        $identifier = $this->getOption('identifier') ?: md5($serverFile);
+
+        $this->configuration
+            ->setIdentifier($identifier)
+            ->setServerFile($serverFile)
+            ->setClientFile($clientFile)
+            ->addInternalData('identifier', $identifier)
+            ->addInternalData('clientFile', $clientFile !== null ? 'bundle.js' : null)
+            ->addInternalData('clientFileReady', $this->fileManager->hasClientCode($identifier));
 
         $renderingResult = null;
         $unit = new Unit($this->controllerContext);
-        $unit->work(function (App $app) use ($identifier, $serverScript, $clientScript, &$renderingResult) {
+        $unit->work(function (App $app) use (&$renderingResult) {
 
             $transpiler = new Transpiler($app);
-            $transpiler->transpile(
-                $identifier,
-                $serverScript,
-                $clientScript,
-                $this->hypotheticalFiles,
-                $this->aliases,
-                $this->additionalDependencies,
-                $this->bundleHelper
-            )->done(function (Bundle $serverBundle) use ($identifier, $serverScript, $app, &$renderingResult) {
+            $transpiler->transpile($this->configuration)->done(function (Bundle $bundle) use ($app, &$renderingResult) {
 
                 $renderer = new Renderer($app);
 
@@ -237,8 +199,8 @@ class ReactView extends AbstractView
                         $app->end();
                     },
                     // shallow rendering did not work or was not possible, falling back to default rendering method
-                    function () use ($identifier, $renderer, $serverScript, $serverBundle, $app, &$renderingResult) {
-                        $renderer->render($identifier, $serverScript, $serverBundle, $this->bundleHelper->getBaseDirectory(), $this->variables, $this->internalData)->done(function ($content) use ($app, &$renderingResult) {
+                    function () use ($renderer, $bundle, $app, &$renderingResult) {
+                        $renderer->render($this->configuration, $bundle, $this->variables)->done(function ($content) use ($app, &$renderingResult) {
                             $renderingResult = $content;
                             $app->end();
                         });
@@ -246,7 +208,7 @@ class ReactView extends AbstractView
                 );
 
                 if ($app->isProxy()) {
-                    $renderer->shallowRender($identifier, $this->variables, $this->internalData)->done(function ($result) use ($renderDeferred) {
+                    $renderer->shallowRender($this->configuration, $this->variables)->done(function ($result) use ($renderDeferred) {
                         if ($result !== null) {
                             $renderDeferred->resolve($result);
                         } else {

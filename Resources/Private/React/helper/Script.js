@@ -2,9 +2,10 @@
 import React, { Fragment } from 'react';
 import { Uri } from '@bytorsten/react';
 import { string, node } from 'prop-types';
+import bundleNotification from 'resource://byTorsten.React/Public/bundleNotification.js'; // eslint-disable-line
 
 const Script = ({ internalDataKey, beforeScript }) => {
-  const { identifier, clientChunkName: chunkname, ...rest } = __internalData; // eslint-disable-line no-undef
+  const { identifier, clientFile, clientFileReady, ...rest } = __internalData; // eslint-disable-line no-undef
 
   return (
     <Fragment>
@@ -24,11 +25,17 @@ const Script = ({ internalDataKey, beforeScript }) => {
 
       {beforeScript}
 
-      <Uri forceFetch action="index" controller="chunk" package="bytorsten.react" arguments={{ identifier, chunkname }}>
-        {({ data }) => (
-          <script defer src={data} />
-        )}
-      </Uri>
+      {clientFile && (
+        <Uri forceFetch action="index" controller="chunk" package="bytorsten.react" arguments={{ identifier, chunkname: clientFile }}>
+          {({ data }) => (
+            <script defer src={data} />
+          )}
+        </Uri>
+      )}
+
+      {clientFile && !clientFileReady && (
+        <script src={bundleNotification} data-identifier={identifier} />
+      )}
     </Fragment>
   );
 };

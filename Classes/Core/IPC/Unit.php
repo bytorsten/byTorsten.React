@@ -71,7 +71,7 @@ class Unit
         $process->ready()->done(function () use ($process, $loop, $processor, &$result, &$throwable) {
 
             $socket = new Socket($loop, $process->getAddress());
-            $app = new App($socket, $this->controllerContext, $process instanceof ProxyProcessInterface);
+            $app = new App($socket, $this->controllerContext, $process);
 
             $app->on('rpc', function ($data, \Closure $reply) use ($app) {
                 $helper = $data['helper'];

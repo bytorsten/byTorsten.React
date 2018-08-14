@@ -62,8 +62,9 @@ class ReactViewTest extends FunctionalTestCase
      */
     public function normalRender()
     {
-        $view = $this->buildView();
-        $view->setScriptPaths(__dir__ . '/Fixtures/simple.server.js');
+        $view = $this->buildView([
+            'serverFile' => __dir__ . '/Fixtures/simple.server.js'
+        ]);
         $result = $view->render();
         $this->assertEquals($result, 'works');
     }

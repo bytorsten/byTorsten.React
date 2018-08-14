@@ -1,11 +1,11 @@
 <?php
 namespace byTorsten\React\Core\Cache;
 
+use byTorsten\React\Core\View\ViewConfiguration;
 use Neos\Flow\Annotations as Flow;
 use Neos\Cache\Frontend\FrontendInterface;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Utility\Environment;
-use byTorsten\React\Core\View\BundlerHelper;
 use byTorsten\React\Core\Bundle;
 
 /**
@@ -15,11 +15,10 @@ class FileManager
 {
     const SERVER_BUNDLE = '[SERVER_BUNDLE]';
     const CLIENT_CODE_FLAG = '[CLIENT_CODE_FLAG]';
+    const SERVER_CODE_FLAG = '[SERVER_CODE_FLAG]';
     const TAGS = '[TAGS]';
-    const CLIENT_SCRIPT_PATH = '[CLIENT_SCRIPT]';
-    const SERVER_SCRIPT_PATH = '[SERVER_SCRIPT]';
     const REVISION = '[REVISION]';
-    const BUNDLE_META = '[BUNDLE_META]';
+    const CONFIGURATION = '[CONFIGURATION]';
 
     /**
      * @Flow\Inject
@@ -41,25 +40,26 @@ class FileManager
 
     /**
      * @param string $identifier
-     * @param null|string $clientScriptPath
-     * @param string $serverScriptPath
      * @param Bundle $bundle
      * @param array $dependencies
+     * @param ViewConfiguration $configuration
      */
-    public function persistServerBundle(string $identifier, ?string $clientScriptPath, string $serverScriptPath, Bundle $bundle, array $dependencies)
+    public function persistServerBundle(string $identifier, Bundle $bundle, array $dependencies, ViewConfiguration $configuration)
     {
+        $allDependencies = array_merge($dependencies, $configuration->getAdditionalDependency());
+
         $tags = array_map(function (string $filename) {
             $this->fileMonitor->monitorFile($filename);
             return md5($filename);
-        }, $dependencies);
+        }, $allDependencies);
 
         $tags[] = $identifier;
 
         $this->set($identifier, static::REVISION, Algorithms::generateRandomString(10), $tags);
         $this->set($identifier, static::TAGS, $tags, $tags);
-        $this->set($identifier, static::CLIENT_SCRIPT_PATH, $clientScriptPath, $tags);
-        $this->set($identifier, static::SERVER_SCRIPT_PATH, $serverScriptPath, $tags);
         $this->set($identifier, static::SERVER_BUNDLE, $bundle, $tags);
+        $this->set($identifier, static::SERVER_CODE_FLAG, true, $tags);
+        $this->set($identifier,static::CONFIGURATION, $configuration, $tags);
     }
 
     /**
@@ -71,58 +71,30 @@ class FileManager
         $tags = $this->get($identifier, static::TAGS);
         $this->set($identifier, static::CLIENT_CODE_FLAG, true, $tags);
 
-        foreach ($bundle->getModules() as $filename => $module) {
-            $this->set($identifier, $filename, $module->getCode(), $tags);
+        foreach ($bundle->getModules() as $module) {
+            $this->set($identifier, $module->getName(), $module->getCode(), $tags);
 
             $map = $module->getMap();
             if ($map !== null) {
-                $this->set($identifier, $filename . '.map', $map, $tags);
+                $this->set($identifier, $module->getName() . '.map', $map, $tags);
             }
         }
     }
 
     /**
      * @param string $identifier
-     * @param BundlerHelper $bundlerHelper
+     * @return ViewConfiguration|null
      */
-    public function persistBundleMeta(string $identifier, BundlerHelper $bundlerHelper)
+    public function getConfiguration(string $identifier): ?ViewConfiguration
     {
-        $tags = $this->get($identifier, static::TAGS);
-        $this->set($identifier, static::BUNDLE_META, $bundlerHelper, $tags);
-    }
-
-    /**
-     * @param string $identifier
-     * @return BundlerHelper
-     */
-    public function getBundleMeta(string $identifier): BundlerHelper
-    {
-        return $this->get($identifier, static::BUNDLE_META) ?: new BundlerHelper();
+        return $this->get($identifier, static::CONFIGURATION);
     }
 
     /**
      * @param string $identifier
      * @return null|string
      */
-    public function getClientScriptPath(string $identifier): string
-    {
-        return $this->get($identifier, static::CLIENT_SCRIPT_PATH);
-    }
-
-    /**
-     * @param string $identifier
-     * @return string
-     */
-    public function getServerScriptPath(string $identifier): string
-    {
-        return $this->get($identifier, static::SERVER_SCRIPT_PATH);
-    }
-
-    /**
-     * @param string $identifier
-     * @return string
-     */
-    public function getRevision(string $identifier): string
+    public function getRevision(string $identifier): ?string
     {
         return $this->get($identifier, static::REVISION);
     }

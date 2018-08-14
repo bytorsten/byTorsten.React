@@ -22,7 +22,6 @@ class ReactResource extends PersistentResource
         $this->filename = $pathInfo['basename'];
         $this->relativePublicationPath = md5($pathInfo['dirname']) . '/';
         $this->collectionName = 'react';
-
     }
 
     /**

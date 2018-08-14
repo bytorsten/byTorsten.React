@@ -1,6 +1,7 @@
 <?php
 namespace byTorsten\React\Core\Rendering;
 
+use byTorsten\React\Core\View\ViewConfiguration;
 use React\Promise\ExtendedPromiseInterface;
 use byTorsten\React\Core\Bundle;
 use byTorsten\React\Core\IPC\App;
@@ -22,39 +23,32 @@ class Renderer
     }
 
     /**
-     * @param string $identifier
-     * @param string $filePath
+     * @param ViewConfiguration $configuration
      * @param Bundle $bundle
-     * @param string|null $baseDirectory
      * @param array $context
-     * @param array $internalData
      * @return ExtendedPromiseInterface
      */
-    public function render(string $identifier, string $filePath, Bundle $bundle, string $baseDirectory = null, array $context = [], array $internalData = []): ExtendedPromiseInterface
+    public function render(ViewConfiguration $configuration, Bundle $bundle, array $context = []): ExtendedPromiseInterface
     {
         return $this->app->call('render', [
-            'identifier' => $identifier,
-            'file' => $filePath,
+            'identifier' => $configuration->getIdentifier(),
             'bundle' => $bundle->toArray(),
             'context' => $context,
-            'internalData' => $internalData,
-            'resolvedPaths' => $bundle->getResolvedPaths(),
-            'baseDirectory' => $baseDirectory
+            'internalData' => $configuration->getInternalData()
         ]);
     }
 
     /**
-     * @param string $identifier
+     * @param ViewConfiguration $configuration
      * @param array $context
-     * @param array $internalData
      * @return ExtendedPromiseInterface
      */
-    public function shallowRender(string $identifier, array $context = [], array $internalData = []): ExtendedPromiseInterface
+    public function shallowRender(ViewConfiguration $configuration, array $context = []): ExtendedPromiseInterface
     {
         return $this->app->call('shallowRender', [
-            'identifier' => $identifier,
+            'identifier' => $configuration->getIdentifier(),
             'context' => $context,
-            'internalData' => $internalData
+            'internalData' => $configuration->getInternalData()
         ]);
     }
 }

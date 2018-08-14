@@ -1,6 +1,5 @@
 byTorsten:
   React:
-    bundleNotification: 'resource://byTorsten.React/Private/bundleNotification.js'
     autoInclude:
       'byTorsten.React': TRUE
 

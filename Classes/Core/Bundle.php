@@ -3,7 +3,6 @@ namespace byTorsten\React\Core;
 
 class Bundle
 {
-
     /**
      * @var Module[]
      */
@@ -23,27 +22,39 @@ class Bundle
 
     /**
      * @param array $rawModules
-     * @param array $resolvedPaths
      * @return Bundle
      */
-    public static function create(array $rawModules, array $resolvedPaths = [])
+    public static function create(array $rawModules)
     {
         $bundle = new Bundle();
-        $bundle->resolvedPaths = $resolvedPaths;
-        foreach ($rawModules as $filename => ['code' => $code, 'map' => $map]) {
-            $bundle->modules[$filename] = Module::create($code, $map);
+        foreach ($rawModules as $filename => ['code' => $code, 'map' => $map, 'initial' => $initial, 'order' => $order]) {
+            $bundle->modules[] = Module::create($filename, $code, $map, $initial, $order);
         }
+
+        usort($bundle->modules, function (Module $moduleA, Module $moduleB) {
+            if ($moduleA->getOrder() === $moduleB->getOrder()) {
+                return 0;
+            }
+
+            return ($moduleA->getOrder() < $moduleB->getOrder()) ? -1 : 1;
+        });
 
         return $bundle;
     }
 
     /**
-     * @param string $filename
-     * @return null|Module
+     * @param string $name
+     * @return Module|null
      */
-    public function getModule(string $filename): ?Module
+    public function getModule(string $name): ?Module
     {
-        return $this->modules[$filename] ?? null;
+        foreach ($this->modules as $module) {
+            if ($module->getName() === $name) {
+                return $module;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -69,8 +80,10 @@ class Bundle
     {
         return array_map(function (Module $module) {
             return [
+                'name' => $module->getName(),
                 'code' => $module->getCode(),
-                'map' => $module->getMap()
+                'map' => $module->getMap(),
+                'initial' => $module->isInitial()
             ];
         }, $this->modules);
     }

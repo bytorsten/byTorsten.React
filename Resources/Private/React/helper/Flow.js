@@ -77,10 +77,8 @@ export class FlowClient {
 }
 
 export const FlowProvider = ({ internalDataKey, client, children }) => {
-
-
-
   let internalData;
+  
   if (process.env.SSR) {
     internalData = __internalData; // eslint-disable-line no-undef
   } else {

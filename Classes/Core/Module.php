@@ -6,12 +6,27 @@ class Module
     /**
      * @var string
      */
+    protected $name;
+
+    /**
+     * @var string
+     */
     protected $code;
 
     /**
      * @var string
      */
     protected $map;
+
+    /**
+     * @var bool
+     */
+    protected $initial;
+
+    /**
+     * @var int
+     */
+    protected $order;
 
     /**
      *
@@ -21,17 +36,31 @@ class Module
     }
 
     /**
+     * @param string $name
      * @param string $code
      * @param null|string $map
-     * @return static
+     * @param bool $initial
+     * @param int $order
+     * @return Module
      */
-    public static function create(string $code, ?string $map)
+    public static function create(string $name, string $code, ?string $map, bool $initial, int $order)
     {
         $module = new static();
+        $module->name = $name;
         $module->code = $code;
         $module->map = $map;
+        $module->initial = $initial;
+        $module->order = $order;
 
         return $module;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**
@@ -43,18 +72,26 @@ class Module
     }
 
     /**
-     * @param string $code
-     */
-    public function appendCode(string $code)
-    {
-        $this->code .= $code;
-    }
-
-    /**
      * @return null|string
      */
     public function getMap(): ?string
     {
         return $this->map;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isInitial(): bool
+    {
+        return $this->initial;
+    }
+
+    /**
+     * @return int
+     */
+    public function getOrder(): int
+    {
+        return $this->order;
     }
 }

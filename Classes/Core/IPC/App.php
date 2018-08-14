@@ -1,6 +1,10 @@
 <?php
 namespace byTorsten\React\Core\IPC;
 
+use byTorsten\React\Core\IPC\Process\BaseProcessInterface;
+use byTorsten\React\Core\IPC\Process\ProcessInterface;
+use byTorsten\React\Core\IPC\Process\ProxyProcessInterface;
+use Neos\Flow\Utility\Algorithms;
 use Neos\Flow\Mvc\Controller\ControllerContext;
 use React\Promise\Deferred;
 use React\Promise\Promise;
@@ -23,25 +27,32 @@ class App
     protected $messageIndex = 0;
 
     /**
+     * @var string
+     */
+    protected $messagePrefix;
+
+    /**
      * @var ControllerContext
      */
     protected $controllerContext;
 
     /**
-     * @var bool
+     * @var ProcessInterface
      */
-    protected $proxy = false;
+    protected $process;
 
     /**
      * @param Socket $socket
      * @param ControllerContext $controllerContext
-     * @param bool $proxy
+     * @param BaseProcessInterface $process
      */
-    public function __construct(Socket $socket, ControllerContext $controllerContext, bool $proxy)
+    public function __construct(Socket $socket, ControllerContext $controllerContext, BaseProcessInterface $process)
     {
+
         $this->socket = $socket;
         $this->controllerContext = $controllerContext;
-        $this->proxy = $proxy;
+        $this->process = $process;
+        $this->messagePrefix = Algorithms::generateRandomString(8);
     }
 
     /**
@@ -58,7 +69,15 @@ class App
      */
     public function isProxy(): bool
     {
-        return $this->proxy;
+        return $this->process instanceof ProxyProcessInterface;;
+    }
+
+    /**
+     * @return bool
+     */
+    public function willSurvive(): bool
+    {
+        return $this->process->keepAlive();
     }
 
     /**
@@ -71,7 +90,7 @@ class App
         $this->messageIndex++;
         $deferred = new Deferred();
 
-        $messageId = 'message_' . $this->messageIndex;
+        $messageId = 'message_' . $this->messagePrefix . '_' . $this->messageIndex;
 
         $this->deferrers[$messageId] = $deferred;
 
