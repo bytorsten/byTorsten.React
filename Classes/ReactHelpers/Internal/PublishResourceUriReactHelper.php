@@ -6,7 +6,7 @@ use Neos\Flow\ResourceManagement\ResourceManager;
 use byTorsten\React\ResourceManagement\ReactResource;
 use byTorsten\React\Core\ReactHelper\AbstractReactHelper;
 
-class CopyResourcesReactHelper extends AbstractReactHelper
+class PublishResourceUriReactHelper extends AbstractReactHelper
 {
     /**
      * @Flow\Inject
@@ -15,16 +15,16 @@ class CopyResourcesReactHelper extends AbstractReactHelper
     protected $resourceManager;
 
     /**
-     * @param array $resources
+     * @param string $relativeRequest
+     * @param string $absoluteRequest
+     * @return string
      */
-    public function evaluate(array $resources): void
+    public function evaluate(string $relativeRequest, string $absoluteRequest): string
     {
         $collection = $this->resourceManager->getCollection('react');
         $target = $collection->getTarget();
-
-        foreach ($resources as $sourcePath) {
-            $resource = new ReactResource($sourcePath);
-            $target->publishResource($resource, $collection);
-        }
+        $resource = new ReactResource($relativeRequest, $absoluteRequest);
+        $target->publishResource($resource, $collection);
+        return $target->getPublicPersistentResourceUri($resource);
     }
 }

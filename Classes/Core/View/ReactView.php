@@ -110,6 +110,24 @@ class ReactView extends AbstractView
     }
 
     /**
+     * @param string $name
+     * @param string $path
+     */
+    public function addExternal(string $name, string $path)
+    {
+        $this->configuration->addExternal($name, $path);
+    }
+
+    /**
+     * @param string $baseDirectory
+     */
+    public function setBaseDirectory(string $baseDirectory)
+    {
+        $filePathResolver = new FilePathResolver();
+        $this->configuration->setBaseDirectory($filePathResolver->resolveFilePath($baseDirectory));
+    }
+
+    /**
      * @param string $key
      * @param mixed $value
      * @return $this|ViewInterface
@@ -156,8 +174,8 @@ class ReactView extends AbstractView
 
         $filePathResolver = new FilePathResolver();
 
-        $clientFile = $filePathResolver->resolveFilePath($rawClientFile);
-        $serverFile = $filePathResolver->resolveFilePath($rawServerFile);
+        $clientFile = $rawClientFile !== null ? $filePathResolver->resolveFilePath($rawClientFile) : null;
+        $serverFile = $rawServerFile !== null ? $filePathResolver->resolveFilePath($rawServerFile) : null;
 
         return $this->filePaths = [$serverFile, $clientFile];
     }

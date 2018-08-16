@@ -72,14 +72,14 @@ class Transpiler
         $configuration->setHelperInfos($this->reactHelperManager->generateHelperInfos());
         $configuration->setPublicPath($this->getPublicPath($identifier));
 
-        $transpileConfiguration = $configuration->toArray();
+        $transpileConfiguration = $configuration->toTranspilerConfiguration();
         $transpileConfiguration['extractDependencies'] = $this->environment->getContext()->isDevelopment();
         $transpileConfiguration['prepareClientBundle'] = $this->app->willSurvive();
 
         return $this->app->call('transpile', $transpileConfiguration)->then(function (array $transpileResult) use ($identifier, $configuration) {
-            ['bundle' => $rawBundle, 'dependencies' => $dependencies] = $transpileResult;
+            ['bundle' => $rawBundle, 'excluded' => $excluded, 'dependencies' => $dependencies] = $transpileResult;
             $bundle = Bundle::create($rawBundle);
-            $this->fileManager->persistServerBundle($identifier, $bundle, $dependencies, $configuration);
+            $this->fileManager->persistServerBundle($identifier, $bundle, $dependencies, $excluded, $configuration);
 
             return $bundle;
         });

@@ -1,12 +1,12 @@
 (function () {
     var script = document.currentScript;
-    var now = Date.now();
+    var identifier = script.dataset.identifier;
     script.previousSibling.onload = function () {
-        log('Bundled generated in ' + ((Date.now() - now) / 1000) + ' seconds', 'ok');
+        log('Bundled sucessfully generated for identifier "' + identifier + '".', 'ok');
     };
 
     script.previousSibling.onerror = function () {
-        log('Bundling error, please check the logs', 'error');
+        log('Bundling error for identifier "' + identifier + '", please check the React.log', 'error');
     };
 
     var log = function (message, severity) {
@@ -25,6 +25,6 @@
         }
     };
 
-    log('A new react bundle is being generated for identifier "' + script.dataset.identifier + '"...' , 'warning');
+    log('A new react bundle is being generated for identifier "' + identifier + '"...' , 'warning');
 })();
 

@@ -1,13 +1,21 @@
 <?php
 namespace byTorsten\React\Core\Rendering;
 
-use byTorsten\React\Core\View\ViewConfiguration;
+use Neos\Flow\Annotations as Flow;
 use React\Promise\ExtendedPromiseInterface;
+use byTorsten\React\Core\Cache\FileManager;
+use byTorsten\React\Core\View\ViewConfiguration;
 use byTorsten\React\Core\Bundle;
 use byTorsten\React\Core\IPC\App;
 
 class Renderer
 {
+    /**
+     * @Flow\Inject
+     * @var FileManager
+     */
+    protected $fileManager;
+
     /**
      * @var App
      */
@@ -30,12 +38,12 @@ class Renderer
      */
     public function render(ViewConfiguration $configuration, Bundle $bundle, array $context = []): ExtendedPromiseInterface
     {
-        return $this->app->call('render', [
-            'identifier' => $configuration->getIdentifier(),
-            'bundle' => $bundle->toArray(),
-            'context' => $context,
-            'internalData' => $configuration->getInternalData()
-        ]);
+        $renderConfiguration = $configuration->toRendererConfiguration();
+        $renderConfiguration['bundle'] = $bundle->toArray();
+        $renderConfiguration['context'] = $context;
+        $renderConfiguration['excluded'] = $this->fileManager->getExclusion($configuration->getIdentifier());
+
+        return $this->app->call('render', $renderConfiguration);
     }
 
     /**
@@ -45,10 +53,9 @@ class Renderer
      */
     public function shallowRender(ViewConfiguration $configuration, array $context = []): ExtendedPromiseInterface
     {
-        return $this->app->call('shallowRender', [
-            'identifier' => $configuration->getIdentifier(),
-            'context' => $context,
-            'internalData' => $configuration->getInternalData()
-        ]);
+        $renderConfiguration = $configuration->toRendererConfiguration();
+        $renderConfiguration['context'] = $context;
+
+        return $this->app->call('shallowRender', $renderConfiguration);
     }
 }

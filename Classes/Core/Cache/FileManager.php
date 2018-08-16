@@ -19,6 +19,7 @@ class FileManager
     const TAGS = '[TAGS]';
     const REVISION = '[REVISION]';
     const CONFIGURATION = '[CONFIGURATION]';
+    const EXCLUSION = '[EXCLUSION]';
 
     /**
      * @Flow\Inject
@@ -42,9 +43,10 @@ class FileManager
      * @param string $identifier
      * @param Bundle $bundle
      * @param array $dependencies
+     * @param array $excluded
      * @param ViewConfiguration $configuration
      */
-    public function persistServerBundle(string $identifier, Bundle $bundle, array $dependencies, ViewConfiguration $configuration)
+    public function persistServerBundle(string $identifier, Bundle $bundle, array $dependencies, array $excluded, ViewConfiguration $configuration)
     {
         $allDependencies = array_merge($dependencies, $configuration->getAdditionalDependency());
 
@@ -60,6 +62,7 @@ class FileManager
         $this->set($identifier, static::SERVER_BUNDLE, $bundle, $tags);
         $this->set($identifier, static::SERVER_CODE_FLAG, true, $tags);
         $this->set($identifier,static::CONFIGURATION, $configuration, $tags);
+        $this->set($identifier, static::EXCLUSION, $excluded, $tags);
     }
 
     /**
@@ -88,6 +91,15 @@ class FileManager
     public function getConfiguration(string $identifier): ?ViewConfiguration
     {
         return $this->get($identifier, static::CONFIGURATION);
+    }
+
+    /**
+     * @param string $identifier
+     * @return array|null
+     */
+    public function getExclusion(string $identifier): ?array
+    {
+        return $this->get($identifier, static::EXCLUSION);
     }
 
     /**

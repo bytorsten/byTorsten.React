@@ -33,14 +33,9 @@ class Socket extends EventEmitter
     protected $address;
 
     /**
-     * @var string
+     * @var Protocol
      */
-    protected $storage;
-
-    /**
-     * @var int
-     */
-    protected $expectedLength = -1;
+    protected $protocol;
 
     /**
      * @param LoopInterface $loop
@@ -50,6 +45,24 @@ class Socket extends EventEmitter
     {
         $this->loop = $loop;
         $this->address = $address;
+        $this->protocol = new Protocol();
+
+        $this->protocol->on('message', function ($message) {
+            $arguments = [$message['data']];
+
+            if (isset($message['messageId'])) {
+                $arguments[] = function ($data) use ($message) {
+                    $this->write($message['messageId'], $data);
+                };
+            }
+
+            try {
+                $this->emit($message['command'], $arguments);
+            } catch (\Throwable $throwable) {
+                $this->close();
+                throw $throwable;
+            }
+        });
     }
 
     /**
@@ -94,60 +107,15 @@ class Socket extends EventEmitter
 
     /**
      * @param string $chunk
-     * @throws SocketException
-     * @throws \Throwable
+     * @throws ProtocolException
      */
     protected function handleData(string $chunk)
     {
-        if ($this->storage === null) {
-            preg_match('/<\[\[([0-9]+)]]>(.+)/', $chunk, $matches);
-
-            if ($matches === null) {
-                $this->close();
-                throw new SocketException('Malformed message: "' . $chunk . '"');
-            }
-
-            $this->expectedLength = $matches[1];
-            $this->storage = $matches[2];
-        } else {
-            $this->storage .= $chunk;
-        }
-
-        if ($this->storage !== null && mb_strlen($this->storage) >= $this->expectedLength) {
-            $message = mb_substr($this->storage, 0, $this->expectedLength);
-            $left = mb_substr($this->storage, $this->expectedLength);
-
-            $this->storage = null;
-            $this->expectedLength = -1;
-
-            $decodedMessage = json_decode($message, true);
-            if ($decodedMessage === null) {
-                $this->close();
-                throw new SocketException('Message is not json decodable: "' . $message . '"');
-            }
-
-            if (!isset($decodedMessage['command'])) {
-                throw new SocketException('Malformed message: "' . $message . '"');
-            }
-
-            $arguments = [$decodedMessage['data']];
-
-            if (isset($decodedMessage['messageId'])) {
-                $arguments[] = function ($data) use ($decodedMessage) {
-                    $this->write($decodedMessage['messageId'], $data);
-                };
-            }
-
-            try {
-                $this->emit($decodedMessage['command'], $arguments);
-            } catch (\Throwable $throwable) {
-                $this->close();
-                throw $throwable;
-            }
-
-            if (strlen($left) > 0) {
-                $this->handleData($left);
-            }
+        try {
+            $this->protocol->add($chunk);
+        } catch (ProtocolException $exception) {
+            $this->close();
+            throw $exception;
         }
     }
 
@@ -175,9 +143,6 @@ class Socket extends EventEmitter
             'data' => $data
         ];
 
-        $encodedPayload = json_encode($payload);
-        $message = '<[[' . mb_strlen($encodedPayload) . ']]>' . $encodedPayload;
-
-        $this->connection->write($message);
+        $this->connection->write($this->protocol->format($payload));
     }
 }

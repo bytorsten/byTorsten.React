@@ -63,7 +63,7 @@ class Bundler
 
         $unit = new Unit($this->controllerContext);
         $unit->work(function (App $app) use ($configuration, &$clientBundle) {
-            $app->call('bundle', $configuration->toArray())->done(function (array $bundleResult) use ($app, $configuration, &$clientBundle) {
+            $app->call('bundle', $configuration->toBundlerConfiguration())->done(function (array $bundleResult) use ($app, $configuration, &$clientBundle) {
                 $clientBundle = Bundle::create($bundleResult);
                 $this->fileManager->persistClientBundle($configuration->getIdentifier(), $clientBundle);
                 $app->end();

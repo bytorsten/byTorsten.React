@@ -54,6 +54,11 @@ class ViewConfiguration
     protected $publicPath;
 
     /**
+     * @var array
+     */
+    protected $externals = [];
+
+    /**
      * @param string $identifier
      * @return ViewConfiguration
      */
@@ -72,20 +77,20 @@ class ViewConfiguration
     }
 
     /**
-     * @param string $serverFile
+     * @param null|string $serverFile
      * @return ViewConfiguration
      */
-    public function setServerFile(string $serverFile): ViewConfiguration
+    public function setServerFile(?string $serverFile): ViewConfiguration
     {
         $this->serverFile = $serverFile;
         return $this;
     }
 
     /**
-     * @param string $clientFile
+     * @param null|string $clientFile
      * @return ViewConfiguration
      */
-    public function setClientFile(string $clientFile): ViewConfiguration
+    public function setClientFile(?string $clientFile): ViewConfiguration
     {
         $this->clientFile = $clientFile;
         return $this;
@@ -152,42 +157,82 @@ class ViewConfiguration
 
     /**
      * @param array $helperInfos
+     * @return ViewConfiguration
      */
-    public function setHelperInfos(array $helperInfos): void
+    public function setHelperInfos(array $helperInfos): ViewConfiguration
     {
         $this->helperInfos = $helperInfos;
+        return $this;
     }
 
     /**
      * @param string $baseDirectory
+     * @return ViewConfiguration
      */
-    public function setBaseDirectory(string $baseDirectory): void
+    public function setBaseDirectory(string $baseDirectory): ViewConfiguration
     {
         $this->baseDirectory = $baseDirectory;
+        return $this;
     }
 
     /**
      * @param string $publicPath
+     * @return ViewConfiguration
      */
-    public function setPublicPath(string $publicPath): void
+    public function setPublicPath(string $publicPath): ViewConfiguration
     {
         $this->publicPath = $publicPath;
+        return $this;
+    }
+
+
+    public function addExternal(string $name, string $path): ViewConfiguration
+    {
+        $this->externals[$name] = $path;
+        return $this;
     }
 
     /**
      * @return array
      */
-    public function toArray(): array
+    public function toTranspilerConfiguration(): array
     {
         return [
             'identifier' => $this->identifier,
-            'serverFile' => $this->serverFile,
-            'clientFile' => $this->clientFile,
+            'file' => $this->serverFile,
             'baseDirectory' => $this->baseDirectory,
             'helpers' => $this->helperInfos,
             'hypotheticalFiles' => $this->hypotheticalFiles,
             'aliases' => $this->aliases,
             'publicPath' => $this->publicPath
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function toBundlerConfiguration(): array
+    {
+        return [
+            'identifier' => $this->identifier,
+            'file' => $this->clientFile,
+            'baseDirectory' => $this->baseDirectory,
+            'helpers' => $this->helperInfos,
+            'hypotheticalFiles' => $this->hypotheticalFiles,
+            'aliases' => $this->aliases,
+            'publicPath' => $this->publicPath,
+            'externals' => $this->externals
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function toRendererConfiguration(): array
+    {
+        return [
+            'identifier' => $this->getIdentifier(),
+            'internalData' => $this->getInternalData(),
         ];
     }
 }

@@ -12,13 +12,14 @@ class ReactResource extends PersistentResource
     protected $sourcePath;
 
     /**
-     * @param string $sourcePath
+     * @param string $relativeRequest
+     * @param string $absoluteRequest
      */
-    public function __construct(string $sourcePath)
+    public function __construct(string $relativeRequest, string $absoluteRequest)
     {
-        $this->sourcePath = $sourcePath;
+        $this->sourcePath = $absoluteRequest;
 
-        $pathInfo = UnicodeFunctions::pathinfo($sourcePath);
+        $pathInfo = UnicodeFunctions::pathinfo($relativeRequest);
         $this->filename = $pathInfo['basename'];
         $this->relativePublicationPath = md5($pathInfo['dirname']) . '/';
         $this->collectionName = 'react';
